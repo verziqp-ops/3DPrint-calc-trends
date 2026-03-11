@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --accent: #8b5cf6; --bg: #0f172a; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; }
+        .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--accent); }
+        input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: none; background: #334155; color: white; box-sizing: border-box; }
+        .slider { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        .btn { background: var(--accent); color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        .price-tag { font-size: 28px; color: #10b981; text-align: center; margin: 10px 0; }
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab { flex: 1; text-align: center; padding: 8px; background: #334155; border-radius: 6px; font-size: 14px; }
+        .active-tab { background: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="tab-menu">
+        <div class="tab active-tab">🧮 Калькулятор</div>
+        <div class="tab">📡 Trend-Radar</div>
+    </div>
+
+    <div class="card">
+        <label>💰 Ціна пластику (грн/кг):</label>
+        <input type="number" id="plastic_p" value="850" oninput="calc()">
+        
+        <label>⚖️ Вага (г):</label>
+        <input type="number" id="weight" placeholder="0.00" oninput="calc()">
+        
+        <label>⏱ Час (год):</label>
+        <input type="number" id="time" placeholder="0.0" oninput="calc()">
+    </div>
+
+    <div class="card">
+        <label>📈 Націнка: <span id="m_val">100</span>%</label>
+        <input type="range" id="markup" min="0" max="300" value="100" class="slider" oninput="calc()">
+    </div>
+
+    <div class="card">
+        <div class="price-tag" id="total">0 грн</div>
+        <button class="btn" onclick="sendToBot()">📩 Надіслати клієнту</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function calc() {
+            let plastic = document.getElementById('plastic_p').value;
+            let w = document.getElementById('weight').value;
+            let t = document.getElementById('time').value;
+            let m = document.getElementById('markup').value;
+            
+            document.getElementById('m_val').innerText = m;
+
+            if(w && t) {
+                // Собівартість: (пластик) + (світло 4.5 грн/год) + (амортизація 5 грн/год)
+                let cost = ((plastic / 1000) * w) + (t * 9.5);
+                let final = cost * (1 + m/100);
+                document.getElementById('total').innerText = Math.round(final) + " грн";
+            }
+        }
+
+        function sendToBot() {
+            let res = document.getElementById('total').innerText;
+            tg.sendData("Final Price: " + res);
+        }
+    </script>
+</body>
+</html>
