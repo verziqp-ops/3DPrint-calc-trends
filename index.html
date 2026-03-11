@@ -3,102 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Premium</title>
+    <title>Dryguny Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --purp: #9d50bb; --blue: #6e48aa; --glass: rgba(255, 255, 255, 0.1); }
+        :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
         body { 
-            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e); 
-            color: white; font-family: 'Segoe UI', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 15px;
+            background: var(--bg); color: white; font-family: 'Inter', sans-serif;
+            margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center;
         }
-        /* Ефект рідкого скла */
-        .glass-card {
-            background: var(--glass); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 25px; padding: 25px; width: 90%; max-width: 400px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); margin-bottom: 20px;
+        /* Вкладки (Кнопки зверху) */
+        .tabs { 
+            display: flex; background: rgba(255,255,255,0.05); 
+            border-radius: 15px; padding: 5px; margin-bottom: 20px; width: 100%; max-width: 360px;
         }
-        h1 { font-size: 28px; margin: 0; text-shadow: 0 0 10px var(--purp); }
-        .price-display { font-size: 42px; font-weight: bold; color: #00f2fe; margin: 15px 0; text-shadow: 0 0 15px #00f2fe; }
+        .tab-btn { 
+            flex: 1; padding: 12px; border: none; border-radius: 12px; 
+            background: none; color: #888; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .tab-btn.active { background: var(--purp); color: white; box-shadow: 0 0 15px rgba(187,134,252,0.4); }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 25px;
+            padding: 20px; width: 100%; max-width: 360px; box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none;
+        }
+        .card.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; text-shadow: 0 0 20px rgba(3,218,198,0.3); }
         
-        input[type="number"] {
-            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--purp);
-            border-radius: 12px; padding: 12px; color: white; margin: 10px 0; box-sizing: border-box;
+        label { display: block; margin: 15px 0 5px 5px; font-size: 13px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        input { 
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
+            background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
         }
-        /* Повзунок */
-        .slider {
-            width: 100%; height: 10px; border-radius: 5px; background: #ddd;
-            outline: none; -webkit-appearance: none; margin: 20px 0;
-        }
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 25px; height: 25px;
-            border-radius: 50%; background: var(--purp); cursor: pointer; box-shadow: 0 0 10px var(--purp);
+        input:focus { border-color: var(--purp); }
+
+        .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
+
+        .main-btn { 
+            background: linear-gradient(135deg, #6200ee, #9d50bb); color: white; 
+            border: none; padding: 18px; border-radius: 18px; width: 100%; 
+            font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px;
         }
 
-        .btn {
-            background: linear-gradient(to right, var(--purp), var(--blue));
-            border: none; color: white; padding: 15px; border-radius: 15px;
-            width: 100%; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
+        /* Стиль трендів */
+        .trend-item { 
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
+            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+            text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.05);
         }
-        .trend-link {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;
-            margin: 8px 0; text-decoration: none; color: white; border: 1px solid transparent;
-        }
-        .trend-link:hover { border-color: var(--purp); background: rgba(255,255,255,0.1); }
+        .trend-item b { color: var(--purp); display: block; font-size: 16px; }
+        .trend-item span { font-size: 12px; color: #777; }
     </style>
 </head>
 <body>
 
-    <div class="glass-card">
-        <h1>💎 Dryguny</h1>
-        <div class="price-display" id="totalPrice">0 ₴</div>
-        
-        <label>Вага деталі (грами):</label>
-        <input type="number" id="weight" placeholder="Введіть вагу..." oninput="calculate()">
-        
-        <label>Націнка: <span id="markupVal">100</span>%</label>
-        <input type="range" min="0" max="500" value="100" class="slider" id="markup" oninput="calculate()">
-        
-        <button class="btn" onclick="copyResult()">📋 Копіювати чек</button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('calc', this)">💎 Розрахунок</button>
+        <button class="tab-btn" onclick="openTab('trends', this)">🔥 Тренди</button>
     </div>
 
-    <div class="glass-card">
-        <h3>🔥 Тренди TikTok & STL</h3>
-        <a href="https://makerworld.com/en/models/174983" class="trend-link" target="_blank">
-            <span>🐉 Articulated Dragon</span><b>3MF</b>
+    <div id="calc" class="card active">
+        <div class="price-tag" id="res">0 ₴</div>
+        
+        <label>💰 Ціна пластику (грн/кг)</label>
+        <input type="number" id="p" value="800" oninput="calc()">
+        
+        <label>⚖️ Вага деталі (грами)</label>
+        <input type="number" id="w" placeholder="Введіть вагу..." oninput="calc()">
+        
+        <label>⏱️ Час друку (години)</label>
+        <input type="number" id="t" placeholder="Години друку..." oninput="calc()">
+        
+        <label style="display:flex; justify-content:space-between">
+            <span>📈 Націнка</span><b id="mLabel" style="color:var(--purp)">100%</b>
+        </label>
+        <input type="range" id="m" min="0" max="500" value="100" class="slider" oninput="calc()">
+        
+        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ЧЕК</button>
+    </div>
+
+    <div id="trends" class="card">
+        <h3 style="margin-top:0">Актуальне зараз</h3>
+        
+        <a href="https://makerworld.com/en/trending" class="trend-item" target="_blank">
+            <div><b>MakerWorld Trends</b><span>Топ 3MF моделей</span></div>
+            <div style="font-size:24px">🐉</div>
         </a>
-        <a href="https://www.printables.com/model/212361" class="trend-link" target="_blank">
-            <span>📱 Collapsible Stand</span><b>STL</b>
+
+        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" target="_blank">
+            <div><b>TikTok Viral</b><span>Що зараз "залітає"</span></div>
+            <div style="font-size:24px">📈</div>
         </a>
-        <a href="https://www.tiktok.com/search?q=3d+printing+business" class="trend-link" target="_blank">
-            <span>📈 TikTok Ideas</span><b>LINK</b>
+
+        <a href="https://www.printables.com/model" class="trend-item" target="_blank">
+            <div><b>Printables</b><span>Найкращі STL</span></div>
+            <div style="font-size:24px">📦</div>
         </a>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.MainButton.hide();
 
-        function calculate() {
-            let w = document.getElementById('weight').value || 0;
-            let m = document.getElementById('markup').value;
-            document.getElementById('markupVal').innerText = m;
-            
-            let plasticCost = 0.8; // 800 грн за кг
-            let result = (w * plasticCost) * (1 + m / 100);
-            
-            document.getElementById('totalPrice').innerText = Math.round(result) + " ₴";
+        function openTab(tabId, btn) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
         }
 
-        function copyResult() {
-            let p = document.getElementById('totalPrice').innerText;
-            let w = document.getElementById('weight').value;
-            let text = `🚀 Замовлення Dryguny:\n⚖️ Вага: ${w}г\n💰 Ціна: ${p}\nГотуємо до друку! 🛠`;
+        function calc() {
+            let plastic = document.getElementById('p').value || 0;
+            let weight = document.getElementById('w').value || 0;
+            let time = document.getElementById('t').value || 0;
+            let markup = document.getElementById('m').value;
+            
+            document.getElementById('mLabel').innerText = markup + "%";
+            
+            let base = (weight * (plastic / 1000)) + (time * 12); // 12 грн/год за світло та амортизацію
+            let final = base * (1 + markup / 100);
+            
+            document.getElementById('res').innerText = Math.round(final) + " ₴";
+        }
+
+        function copyCheck() {
+            let res = document.getElementById('res').innerText;
+            let weight = document.getElementById('w').value;
+            if(!weight) return tg.showAlert("Введи вагу деталі!");
+            
+            let text = `🚀 Dryguny Check:\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
-            tg.showAlert("Чек скопійовано!");
+            tg.showAlert("Чек скопійовано! Вставляй клієнту.");
         }
     </script>
 </body>
