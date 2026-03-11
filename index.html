@@ -3,82 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny 3D Calc</title>
+    <title>Dryguny Premium</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; padding: 15px; text-align: center; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 18px; margin-bottom: 20px; border: 1px solid #3d3d3d; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2 { color: #bb86fc; margin-bottom: 20px; }
-        h3 { color: #03dac6; font-size: 1.1em; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: white; font-size: 16px; }
-        button { background: #6200ee; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
-        button:active { transform: scale(0.98); background: #3700b3; }
-        .send-btn { background: #03dac6; color: #000; margin-top: 15px; }
+        :root { --purp: #9d50bb; --blue: #6e48aa; --glass: rgba(255, 255, 255, 0.1); }
+        body { 
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e); 
+            color: white; font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 15px;
+        }
+        /* Ефект рідкого скла */
+        .glass-card {
+            background: var(--glass); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px; padding: 25px; width: 90%; max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); margin-bottom: 20px;
+        }
+        h1 { font-size: 28px; margin: 0; text-shadow: 0 0 10px var(--purp); }
+        .price-display { font-size: 42px; font-weight: bold; color: #00f2fe; margin: 15px 0; text-shadow: 0 0 15px #00f2fe; }
         
-        .trend-container { text-align: left; }
-        .trend-item { display: flex; align-items: center; background: #2a2a2a; margin: 8px 0; padding: 12px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
-        .trend-item:hover { border-color: #bb86fc; background: #333; }
-        .trend-icon { font-size: 24px; margin-right: 15px; }
-        .trend-info b { display: block; color: #bb86fc; }
-        .trend-info span { font-size: 0.85em; color: #999; }
+        input[type="number"] {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--purp);
+            border-radius: 12px; padding: 12px; color: white; margin: 10px 0; box-sizing: border-box;
+        }
+        /* Повзунок */
+        .slider {
+            width: 100%; height: 10px; border-radius: 5px; background: #ddd;
+            outline: none; -webkit-appearance: none; margin: 20px 0;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 25px; height: 25px;
+            border-radius: 50%; background: var(--purp); cursor: pointer; box-shadow: 0 0 10px var(--purp);
+        }
+
+        .btn {
+            background: linear-gradient(to right, var(--purp), var(--blue));
+            border: none; color: white; padding: 15px; border-radius: 15px;
+            width: 100%; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
+        }
+        .trend-link {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;
+            margin: 8px 0; text-decoration: none; color: white; border: 1px solid transparent;
+        }
+        .trend-link:hover { border-color: var(--purp); background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
-    <h2>🛠 Dryguny 3D Calc</h2>
-    
-    <div class="card">
-        <h3>Калькулятор прибутку</h3>
-        <input type="number" id="weight" placeholder="Вага деталі (г)">
-        <input type="number" id="cost" placeholder="Ціна пластику (грн/кг)" value="800">
-        <input type="number" id="markup" placeholder="Націнка (%)" value="100">
-        <h2 id="result">0 грн</h2>
-        <button onclick="calculate()">Порахувати</button>
-        <button class="send-btn" onclick="sendToClient()">📋 Копіювати чек для клієнта</button>
+
+    <div class="glass-card">
+        <h1>💎 Dryguny</h1>
+        <div class="price-display" id="totalPrice">0 ₴</div>
+        
+        <label>Вага деталі (грами):</label>
+        <input type="number" id="weight" placeholder="Введіть вагу..." oninput="calculate()">
+        
+        <label>Націнка: <span id="markupVal">100</span>%</label>
+        <input type="range" min="0" max="500" value="100" class="slider" id="markup" oninput="calculate()">
+        
+        <button class="btn" onclick="copyResult()">📋 Копіювати чек</button>
     </div>
 
-    <div class="card">
-        <h3>🔥 Тренди та Сайти</h3>
-        <div class="trend-container">
-            <div class="trend-item" onclick="window.open('https://www.tiktok.com/search?q=3d+printing+ideas', '_blank')">
-                <div class="trend-icon">📱</div>
-                <div class="trend-info"><b>Тренди TikTok</b><span>Що зараз "залітає" в рек</span></div>
-            </div>
-            <div class="trend-item" onclick="window.open('https://makerworld.com/en/trending', '_blank')">
-                <div class="trend-icon">🏗️</div>
-                <div class="trend-info"><b>MakerWorld Trending</b><span>Найпопулярніші моделі</span></div>
-            </div>
-            <div class="trend-item" onclick="window.open('https://www.printables.com/model', '_blank')">
-                <div class="trend-icon">📦</div>
-                <div class="trend-info"><b>Printables</b><span>База крутих STL файлів</span></div>
-            </div>
-        </div>
+    <div class="glass-card">
+        <h3>🔥 Тренди TikTok & STL</h3>
+        <a href="https://makerworld.com/en/models/174983" class="trend-link" target="_blank">
+            <span>🐉 Articulated Dragon</span><b>3MF</b>
+        </a>
+        <a href="https://www.printables.com/model/212361" class="trend-link" target="_blank">
+            <span>📱 Collapsible Stand</span><b>STL</b>
+        </a>
+        <a href="https://www.tiktok.com/search?q=3d+printing+business" class="trend-link" target="_blank">
+            <span>📈 TikTok Ideas</span><b>LINK</b>
+        </a>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+        tg.MainButton.hide();
 
         function calculate() {
-            let w = document.getElementById('weight').value;
-            let c = document.getElementById('cost').value;
+            let w = document.getElementById('weight').value || 0;
             let m = document.getElementById('markup').value;
-            if(!w) return alert("Введи вагу!");
+            document.getElementById('markupVal').innerText = m;
             
-            let res = (w * (c / 1000)) * (1 + m / 100);
-            document.getElementById('result').innerText = Math.round(res) + " грн";
+            let plasticCost = 0.8; // 800 грн за кг
+            let result = (w * plasticCost) * (1 + m / 100);
+            
+            document.getElementById('totalPrice').innerText = Math.round(result) + " ₴";
         }
 
-        function sendToClient() {
-            let weight = document.getElementById('weight').value;
-            let finalPrice = document.getElementById('result').innerText;
-            if(finalPrice === "0 грн") return alert("Спочатку порахуй!");
-
-            let text = `📦 Ваше замовлення Dryguny:\n⚖️ Вага: ${weight}г\n💰 Ціна: ${finalPrice}\nДякуємо, що обираєте нас! 🚀`;
-            
-            // Копіювання в буфер обміну
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Чек скопійовано! Тепер просто встав його в чат з клієнтом.");
-            });
+        function copyResult() {
+            let p = document.getElementById('totalPrice').innerText;
+            let w = document.getElementById('weight').value;
+            let text = `🚀 Замовлення Dryguny:\n⚖️ Вага: ${w}г\n💰 Ціна: ${p}\nГотуємо до друку! 🛠`;
+            navigator.clipboard.writeText(text);
+            tg.showAlert("Чек скопійовано!");
         }
     </script>
 </body>
