@@ -14,8 +14,7 @@ logging.basicConfig(level=logging.INFO)
 # --- КОНФІГУРАЦІЯ ШІ ---
 GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
 genai.configure(api_key=GOOGLE_API_KEY)
-ai_model = genai.GenerativeModel('gemini-1.5-flash')
-
+ai_model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 # Інструкція для ШІ
 AI_INSTRUCTION = (
     "Ти — Dryguny AI, офіційний асистент бренду Dryguny. Твій власник — Макс. "
@@ -147,3 +146,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Зупинка")
+
