@@ -25,7 +25,7 @@ AI_INSTRUCTION = (
 )
 
 # --- КОНФІГУРАЦІЯ БОТА ---
-TOKEN = "8594286835:AAFuEBZnWbTlkRpmMJ0xf03V7tWgEMGmYjQ" # Переконайся, що цей токен актуальний!
+TOKEN = "8594286835:AAGQHTXinWGRiBFwY489TXzxFGJwMuE3TeY" # Переконайся, що цей токен актуальний!
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -47,27 +47,31 @@ async def start_handler(message: types.Message):
 # 1. РОЗУМНА ДОПОМОГА (GEMINI AI)
 @dp.message(Command("help"))
 async def ai_help_handler(message: types.Message):
+    # Отримуємо текст після команди
     user_query = message.text.replace("/help", "").strip()
     
+    # Якщо тексту немає, просимо його написати
     if not user_query:
-        await message.answer("🆘 Напиши питання. Наприклад: `/help чому PLA стає крихким?`", parse_mode="Markdown")
+        await message.answer("🆘 Опиши свою проблему після команди, наприклад:\n`/help відклеюється перший слой`", parse_mode="Markdown")
         return
 
-    status_msg = await message.answer("🧠 *Dryguny AI аналізує...*")
+    # Якщо текст є — запускаємо ШІ
+    status_msg = await message.answer("🧠 *Dryguny AI аналізує проблему...*")
 
     try:
+        # Додаємо інструкцію для Gemini
         full_prompt = f"{AI_INSTRUCTION}\n\nПитання: {user_query}"
         response = ai_model.generate_content(full_prompt)
         
         await bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=status_msg.message_id,
-            text=f"🤖 **Dryguny AI:**\n\n{response.text}",
+            text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
             parse_mode="Markdown"
         )
     except Exception as e:
-        logging.error(f"AI Error: {e}")
-        await bot.edit_message_text("⚠️ Мізки перегрілися. Перевір ліміти API!", message.chat.id, status_msg.message_id)
+        logging.error(e)
+        await bot.edit_message_text("⚠️ Не вдалося зв'язатися з ШІ. Перевір API-ключ Gemini!", message.chat.id, status_msg.message_id)
 
 # 2. ПОШУК STL ФАЙЛІВ
 @dp.message(Command("find"))
@@ -139,3 +143,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Зупинка")
+
