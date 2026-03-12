@@ -29,10 +29,10 @@ async def start_handler(message: types.Message):
 @dp.message(Command("trends"))
 async def trends_handler(message: types.Message):
     markup = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="🔥 MakerWorld (Bambu Lab)", url="https://makerworld.com/en/trending")],
+        [types.InlineKeyboardButton(text="🔥 MakerWorld (Bambu Lab)", url="https://makerworld.com/uk")],
         [types.InlineKeyboardButton(text="🧩 Printables Trending", url="https://www.printables.com/model?period=week&sort=trending")],
         [types.InlineKeyboardButton(text="🎬 TikTok (3D Printing)", url="https://www.tiktok.com/search/video?q=3d%20printing%20ideas")],
-        [types.InlineKeyboardButton(text="📦 Thingiverse Popular", url="https://www.thingiverse.com/explore/popular")]
+        [types.InlineKeyboardButton(text="📦 Thingiverse Popular", url="https://www.thingiverse.com/?page=1&sort=popular&posted_after=now-7d")]
     ])
     
     await message.answer(
@@ -74,3 +74,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот зупинений.")
+
