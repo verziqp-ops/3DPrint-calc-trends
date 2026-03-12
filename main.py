@@ -41,6 +41,82 @@ async def trends_handler(message: types.Message):
         reply_markup=markup
     )
 
+import aiohttp
+from bs4 import BeautifulSoup
+
+@dp.message(Command("filament"))
+async def filament_handler(message: types.Message):
+    try:
+        args = message.text.split()
+
+        if len(args) < 3:
+            await message.answer("Приклад:\n/filament pla 400-500")
+            return
+
+        material = args[1].lower()
+        price_range = args[2].split("-")
+
+        min_price = int(price_range[0])
+        max_price = int(price_range[1])
+
+        results = []
+
+        shops = [
+            f"https://prom.ua/ua/search?search_term={material}+filament",
+            f"https://rozetka.com.ua/ua/search/?text={material}%20filament"
+        ]
+
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+
+            for shop in shops:
+                async with session.get(shop) as resp:
+                    html = await resp.text()
+
+                    soup = BeautifulSoup(html, "html.parser")
+
+                    products = soup.find_all("a", href=True)
+
+                    for p in products[:30]:
+
+                        text = p.get_text().lower()
+
+                        if material in text:
+
+                            price_text = ''.join(filter(str.isdigit, text))
+
+                            if price_text:
+                                price = int(price_text)
+
+                                if min_price <= price <= max_price:
+                                    link = p["href"]
+
+                                    if not link.startswith("http"):
+                                        link = shop + link
+
+                                    results.append((text[:60], price, link))
+
+                        if len(results) >= 5:
+                            break
+
+        if not results:
+            await message.answer("❌ Нічого не знайдено в цьому діапазоні.")
+            return
+
+        reply = f"🧵 {material.upper()} {min_price}-{max_price} грн:\n\n"
+
+        for i, r in enumerate(results, 1):
+            reply += f"{i}️⃣ {r[0]}\n💰 {r[1]} грн\n🔗 {r[2]}\n\n"
+
+        await message.answer(reply)
+
+    except Exception as e:
+        logging.error(e)
+        await message.answer("⚠️ Помилка пошуку.")
+        
 # Ехо-handler завжди останній
 @dp.message()
 async def echo_handler(message: types.Message):
@@ -74,4 +150,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот зупинений.")
+
 
