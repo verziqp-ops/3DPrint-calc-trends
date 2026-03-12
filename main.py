@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 # --- КОНФІГУРАЦІЯ ---
 # Встав сюди свій токен, який ти отримав у @BotFather
-TOKEN = "ТУТ_ТВІЙ_ТОКЕН_БОТА" 
+TOKEN = "8594286835:AAFuEBZnWbTlkRpmMJ0xf03V7tWgEMGmYjQ" 
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -70,3 +70,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот зупинений.")
+
