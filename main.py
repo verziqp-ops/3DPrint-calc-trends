@@ -41,6 +41,8 @@ async def trends_handler(message: types.Message):
         reply_markup=markup
     )
 
+import aiohttp
+
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
     try:
@@ -52,69 +54,54 @@ async def filament_handler(message: types.Message):
 
         material = args[1].lower()
         price_range = args[2].split("-")
-
         min_price = int(price_range[0])
         max_price = int(price_range[1])
 
         results = []
 
-        # --- список магазинів для пошуку ---
-        shops = [
-            {"name": "Prom", "url": f"https://prom.ua/ua/search?search_term={material}+filament"},
-            {"name": "Rozetka", "url": f"https://rozetka.com.ua/ua/search/?text={material}%20filament"},
-            {"name": "Epicentr", "url": f"https://epicentrk.ua/ua/search/?q={material}+filament"},
-            {"name": "3DDevice", "url": f"https://3ddevice.com.ua/search?q={material}+filament"},
-            {"name": "3DPrintShop", "url": f"https://3dprintshop.com.ua/search?q={material}+filament"}
-        ]
+        headers = {"User-Agent": "Mozilla/5.0"}
 
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-
+        # --- PROM ---
+        prom_url = f"https://prom.ua/ua/search?search_term={material}+filament&ajax=1"
         async with aiohttp.ClientSession(headers=headers) as session:
+            try:
+                async with session.get(prom_url) as resp:
+                    data = await resp.json()
+                    for item in data.get("products", [])[:10]:
+                        name = item.get("name", "")
+                        price = int(item.get("price", 0))
+                        link = "https://prom.ua" + item.get("url", "")
+                        if min_price <= price <= max_price:
+                            results.append((name, price, link, "Prom"))
+            except:
+                pass
 
-            for shop in shops:
-                try:
-                    async with session.get(shop["url"]) as resp:
-                        html = await resp.text()
-                        soup = BeautifulSoup(html, "html.parser")
-
-                        # шукаємо всі блоки, які можуть містити назву і ціну
-                        products = soup.find_all("div")
-
-                        for p in products:
-
-                            text = p.get_text(" ").lower()
-
-                            if material in text and "грн" in text:
-
-                                # витягаємо всі числа у тексті
-                                numbers = [int(s) for s in text.replace(" ", "").split() if s.isdigit()]
-
-                                for price in numbers:
-
-                                    if min_price <= price <= max_price:
-
-                                        link_tag = p.find("a", href=True)
-                                        if link_tag:
-                                            link = link_tag["href"]
-                                            if not link.startswith("http"):
-                                                link = shop["url"].split("/search")[0] + link
-
-                                            results.append((text[:80], price, link, shop["name"]))
-                                            break
-
-                        # обмежимо результати, щоб не спамити
-                        if len(results) >= 10:
-                            break
-                except Exception as e:
-                    logging.warning(f"Не вдалося парсити {shop['name']}: {e}")
-                    continue
+        # --- ROZETKA ---
+        rozetka_url = f"https://rozetka.com.ua/ua/search/?text={material}%20filament&ajax=1"
+        async with aiohttp.ClientSession(headers=headers) as session:
+            try:
+                async with session.get(rozetka_url) as resp:
+                    html = await resp.text()
+                    soup = BeautifulSoup(html, "html.parser")
+                    items = soup.find_all("div", class_="goods-tile__inner")[:10]
+                    for p in items:
+                        name_tag = p.find("span", class_="goods-tile__title")
+                        price_tag = p.find("span", class_="goods-tile__price-value")
+                        link_tag = p.find("a", class_="goods-tile__heading")
+                        if name_tag and price_tag and link_tag:
+                            name = name_tag.text.strip()
+                            price = int(''.join(filter(str.isdigit, price_tag.text)))
+                            link = link_tag["href"]
+                            if min_price <= price <= max_price:
+                                results.append((name, price, link, "Rozetka"))
+            except:
+                pass
 
         if not results:
             await message.answer("❌ Нічого не знайдено в цьому діапазоні.")
             return
 
+        # --- відповідаємо користувачу ---
         reply = f"🧵 {material.upper()} {min_price}-{max_price} грн:\n\n"
         for i, r in enumerate(results[:10], 1):
             reply += f"{i}️⃣ {r[0]}\n💰 {r[1]} грн ({r[3]})\n🔗 {r[2]}\n\n"
@@ -124,7 +111,6 @@ async def filament_handler(message: types.Message):
     except Exception as e:
         logging.error(e)
         await message.answer("⚠️ Помилка пошуку філаменту.")
-        
 # Ехо-handler завжди останній
 @dp.message()
 async def echo_handler(message: types.Message):
@@ -158,6 +144,7 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот зупинений.")
+
 
 
 
