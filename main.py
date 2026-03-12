@@ -11,7 +11,7 @@ from aiohttp import web
 # Налаштування логів
 logging.basicConfig(level=logging.INFO)
 
-# --- КОНФІГУРАЦІЯ ШІ (Твій ключ активовано) ---
+# --- КОНФІГУРАЦІЯ ШІ ---
 GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
 genai.configure(api_key=GOOGLE_API_KEY)
 ai_model = genai.GenerativeModel('gemini-1.5-flash')
@@ -25,7 +25,7 @@ AI_INSTRUCTION = (
 )
 
 # --- КОНФІГУРАЦІЯ БОТА ---
-TOKEN = "8594286835:AAGQHTXinWGRiBFwY489TXzxFGJwMuE3TeY" # Переконайся, що цей токен актуальний!
+TOKEN = "8594286835:AAFPqy4iOs66tTN1VfL6EVucUQMOR6uFUx8" 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -57,12 +57,12 @@ async def ai_help_handler(message: types.Message):
     status_msg = await message.answer("🧠 *Dryguny AI аналізує проблему...*", parse_mode="Markdown")
 
     try:
-        # 2. Запускаємо генерацію (через thread, щоб не вішати бота)
+        # 2. Запускаємо генерацію (через executor, щоб не блокувати потік)
         full_prompt = f"{AI_INSTRUCTION}\n\nПитання: {user_query}"
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(None, lambda: ai_model.generate_content(full_prompt))
         
-        # 3. ВИПРАВЛЕНО: Чітко вказуємо текст і ID
+        # 3. Оновлюємо повідомлення з відповіддю
         await bot.edit_message_text(
             text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
             chat_id=message.chat.id,
@@ -71,7 +71,6 @@ async def ai_help_handler(message: types.Message):
         )
     except Exception as e:
         logging.error(f"AI Error: {e}")
-        # Якщо сталася помилка — теж коректно оновлюємо текст
         await bot.edit_message_text(
             text=f"⚠️ Помилка ШІ: {str(e)}",
             chat_id=message.chat.id,
@@ -138,9 +137,9 @@ async def start_webserver():
 
 async def main():
     await start_webserver()
-    # Видаляємо всі старі повідомлення, щоб не було конфліктів
+    # Очищуємо старі апдейти, щоб уникнути конфліктів (Conflict Error)
     await bot.delete_webhook(drop_pending_updates=True)
-    logging.info("Dryguny AI Bot запущен!")
+    logging.info("Dryguny AI Bot запущено!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
@@ -148,5 +147,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Зупинка")
-
-
