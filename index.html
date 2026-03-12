@@ -147,10 +147,11 @@
             let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            let text = `🚀 Dryguny Check:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
             tg.showAlert("Чек скопійовано! Вставляй клієнту.");
         }
     </script>
 </body>
 </html>
+
