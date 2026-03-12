@@ -1,92 +1,141 @@
-import os, asyncio, logging, urllib.parse, aiohttp
-from bs4 import BeautifulSoup
+import os
+import asyncio
+import logging
+import urllib.parse
+import aiohttp
+import google.generativeai as genai
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiohttp import web
 
+# Налаштування логів
 logging.basicConfig(level=logging.INFO)
 
-# ТОКЕН (краще онови через BotFather і встав сюди новий)
-TOKEN = "8594286835:AAGh9mfOe-e0Bufwtprao4uBYHTOQRnsWwo" 
+# --- КОНФІГУРАЦІЯ ШІ (Твій ключ активовано) ---
+GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
+genai.configure(api_key=GOOGLE_API_KEY)
+ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
+# Інструкція для ШІ
+AI_INSTRUCTION = (
+    "Ти — Dryguny AI, офіційний асистент бренду Dryguny. Твій власник — Макс. "
+    "Ти експерт у 3D-друці, техніці Bambu Lab, моделюванні в Blender та Fusion 360. "
+    "Відповідай коротко, технічно грамотно, з емодзі та гумором. "
+    "Якщо Макс питає про помилки друку — давай чіткі кроки виправлення."
+)
+
+# --- КОНФІГУРАЦІЯ БОТА ---
+TOKEN = "8594286835:AAFuEBZnWbTlkRpmMJ0xf03V7tWgEMGmYjQ" # Переконайся, що цей токен актуальний!
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 1. СТАРТ
+# --- ОБРОБНИКИ КОМАНД ---
+
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "🛠 **Dryguny Hub v2.0**\n\n"
-        "🔍 `/find назва` — пошук STL\n"
-        "🧵 `/filament тип ціна-ціна` — пошук пластику\n"
-        "🆘 `/help проблема` — поради з друку\n"
-        "🔥 `/trends` — тренди",
-        parse_mode="Markdown")
+        "🚀 **Dryguny AI Hub v3.0 активований!**\n\n"
+        "Твій персональний ШІ-помічник готовий.\n\n"
+        "📜 **Команди:**\n"
+        "🤖 `/help [питання]` — запитати у ШІ (Gemini)\n"
+        "🔍 `/find [модель]` — знайти STL файли\n"
+        "🧵 `/filament [тип] [ціна-ціна]` — пошук пластику\n"
+        "🔥 `/trends` — свіжий хайп для друку",
+        parse_mode="Markdown"
+    )
 
-# 2. ПОШУК STL
-@dp.message(Command("find"))
-async def find_stl(message: types.Message):
-    query = message.text.replace("/find", "").strip()
-    if not query: return await message.answer("Напиши що шукати: `/find dragon`")
+# 1. РОЗУМНА ДОПОМОГА (GEMINI AI)
+@dp.message(Command("help"))
+async def ai_help_handler(message: types.Message):
+    user_query = message.text.replace("/help", "").strip()
     
-    q = urllib.parse.quote(query)
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="💎 MakerWorld", url=f"https://makerworld.com/en/models/search?keyword={q}")],
-        [types.InlineKeyboardButton(text="🧩 Printables", url=f"https://www.printables.com/search/models?q={q}")]
-    ])
-    await message.answer(f"🔍 Шукаю STL: **{query}**", reply_markup=kb, parse_mode="Markdown")
+    if not user_query:
+        await message.answer("🆘 Напиши питання. Наприклад: `/help чому PLA стає крихким?`", parse_mode="Markdown")
+        return
 
-# 3. ПОШУК ФІЛАМЕНТУ
+    status_msg = await message.answer("🧠 *Dryguny AI аналізує...*")
+
+    try:
+        full_prompt = f"{AI_INSTRUCTION}\n\nПитання: {user_query}"
+        response = ai_model.generate_content(full_prompt)
+        
+        await bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=status_msg.message_id,
+            text=f"🤖 **Dryguny AI:**\n\n{response.text}",
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        logging.error(f"AI Error: {e}")
+        await bot.edit_message_text("⚠️ Мізки перегрілися. Перевір ліміти API!", message.chat.id, status_msg.message_id)
+
+# 2. ПОШУК STL ФАЙЛІВ
+@dp.message(Command("find"))
+async def find_stl_handler(message: types.Message):
+    query = message.text.replace("/find", "").strip()
+    if not query:
+        await message.answer("❌ Напиши назву моделі: `/find dragon`")
+        return
+
+    q = urllib.parse.quote(query)
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="💎 MakerWorld", url=f"https://makerworld.com/en/models/search?keyword={q}")],
+        [types.InlineKeyboardButton(text="🧩 Printables", url=f"https://www.printables.com/search/models?q={q}")],
+        [types.InlineKeyboardButton(text="💰 Cults3D", url=f"https://cults3d.com/en/search?q={q}")]
+    ])
+    await message.answer(f"🔍 **Шукаю моделі для: {query}**", reply_markup=markup, parse_mode="Markdown")
+
+# 3. ПОШУК ФІЛАМЕНТУ (PROM.UA)
 @dp.message(Command("filament"))
-async def filament_search(message: types.Message):
+async def filament_handler(message: types.Message):
     try:
         args = message.text.split()
-        if len(args) < 3: return await message.answer("Формат: `/filament pla 400-800`")
-        
+        if len(args) < 3:
+            await message.answer("❌ Формат: `/filament pla 400-800`")
+            return
+
         material, p_range = args[1].lower(), args[2].split("-")
         min_p, max_p = p_range[0], p_range[1]
         
         url = f"https://prom.ua/ua/search?search_term={material}+filament&price_local__gte={min_p}&price_local__lte={max_p}"
-        await message.answer(f"🧵 Пошук {material} ({min_p}-{max_p} грн):\n[Відкрити результати на Prom.ua]({url})", parse_mode="Markdown")
+        await message.answer(f"🧵 Пошук {material.upper()} ({min_p}-{max_p} грн):\n[Відкрити результати на Prom.ua]({url})", parse_mode="Markdown")
     except:
-        await message.answer("⚠️ Помилка. Приклад: `/filament petg 500-900`")
+        await message.answer("⚠️ Помилка формату ціни.")
 
 # 4. ТРЕНДИ
 @dp.message(Command("trends"))
-async def trends(message: types.Message):
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="🔥 MakerWorld", url="https://makerworld.com/uk")],
-        [types.InlineKeyboardButton(text="🎬 TikTok Ideas", url="https://www.tiktok.com/search/video?q=3d%20printing%20ideas")]
+async def trends_handler(message: types.Message):
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="🔥 MakerWorld Trends", url="https://makerworld.com/uk")],
+        [types.InlineKeyboardButton(text="🎬 TikTok 3D Ideas", url="https://www.tiktok.com/search/video?q=3d%20printing%20ideas")]
     ])
-    await message.answer("🚀 Трендові моделі:", reply_markup=kb)
+    await message.answer("🚀 **Свіжі ідеї для Dryguny:**", reply_markup=markup)
 
-# 5. ДОПОМОГА
-@dp.message(Command("help"))
-async def fix_help(message: types.Message):
-    prob = message.text.replace("/help", "").lower()
-    if "липне" in prob:
-        msg = "🛠 **Не липне?**\n1. Помий стіл.\n2. Перевір Z-offset.\n3. Спробуй клей-олівець."
-    elif "павутина" in prob:
-        msg = "🛠 **Павутина?**\n1. Зменш температуру сопла.\n2. Збільш ретракт.\n3. Просуши пластик."
-    else:
-        msg = "🛠 Опиши проблему після команди, наприклад: `/help павутина`"
-    await message.answer(msg, parse_mode="Markdown")
+# --- WEB SERVER (Для Render) ---
 
-# ВАЖЛИВО: Ехо-handler має бути в самому кінці!
-@dp.message()
-async def echo(message: types.Message):
-    await message.answer("Я не знаю такої команди. Спробуй /start")
+async def handle_ping(request):
+    return web.Response(text="Dryguny AI is Running!")
 
-# --- СЕРВЕР ---
-async def handle_ping(r): return web.Response(text="Running")
-async def main():
+async def start_webserver():
     app = web.Application()
     app.router.add_get("/", handle_ping)
     runner = web.AppRunner(app)
     await runner.setup()
-    await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080))).start()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+# --- ГОЛОВНИЙ ЗАПУСК ---
+
+async def main():
+    await start_webserver()
+    # Видаляємо всі старі повідомлення, щоб не було конфліктів
     await bot.delete_webhook(drop_pending_updates=True)
+    logging.info("Dryguny AI Bot запущен!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Зупинка")
