@@ -14,7 +14,13 @@ logging.basicConfig(level=logging.INFO)
 # --- КОНФІГУРАЦІЯ ШІ ---
 GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
 genai.configure(api_key=GOOGLE_API_KEY)
-ai_model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+
+# ВИПРАВЛЕНО: Використовуємо gemini-pro для стабільності, якщо flash видає 404
+try:
+    ai_model = genai.GenerativeModel(model_name="gemini-pro")
+except:
+    ai_model = genai.GenerativeModel(model_name="models/gemini-pro")
+
 # Інструкція для ШІ
 AI_INSTRUCTION = (
     "Ти — Dryguny AI, офіційний асистент бренду Dryguny. Твій власник — Макс. "
@@ -24,6 +30,7 @@ AI_INSTRUCTION = (
 )
 
 # --- КОНФІГУРАЦІЯ БОТА ---
+# Використовуємо твій останній токен
 TOKEN = "8594286835:AAFPqy4iOs66tTN1VfL6EVucUQMOR6uFUx8" 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -52,22 +59,27 @@ async def ai_help_handler(message: types.Message):
         await message.answer("🆘 Опиши свою проблему після команди, наприклад:\n`/help відклеюється перший слой`", parse_mode="Markdown")
         return
 
-    # 1. Надсилаємо початкове повідомлення
     status_msg = await message.answer("🧠 *Dryguny AI аналізує проблему...*", parse_mode="Markdown")
 
     try:
-        # 2. Запускаємо генерацію (через executor, щоб не блокувати потік)
+        # 2. Запускаємо генерацію
         full_prompt = f"{AI_INSTRUCTION}\n\nПитання: {user_query}"
+        
+        # Використовуємо простіший метод виклику для уникнення помилок версій
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(None, lambda: ai_model.generate_content(full_prompt))
         
-        # 3. Оновлюємо повідомлення з відповіддю
-        await bot.edit_message_text(
-            text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
-            chat_id=message.chat.id,
-            message_id=status_msg.message_id,
-            parse_mode="Markdown"
-        )
+        # Перевіряємо, чи є відповідь
+        if response.text:
+            await bot.edit_message_text(
+                text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
+                chat_id=message.chat.id,
+                message_id=status_msg.message_id,
+                parse_mode="Markdown"
+            )
+        else:
+            await bot.edit_message_text(text="⚠️ ШІ не зміг згенерувати відповідь. Спробуй інше питання.", chat_id=message.chat.id, message_id=status_msg.message_id)
+
     except Exception as e:
         logging.error(f"AI Error: {e}")
         await bot.edit_message_text(
@@ -92,7 +104,7 @@ async def find_stl_handler(message: types.Message):
     ])
     await message.answer(f"🔍 **Шукаю моделі для: {query}**", reply_markup=markup, parse_mode="Markdown")
 
-# 3. ПОШУК ФІЛАМЕНТУ (PROM.UA)
+# 3. ПОШУК ФІЛАМЕНТУ
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
     try:
@@ -104,6 +116,47 @@ async def filament_handler(message: types.Message):
         material, p_range = args[1].lower(), args[2].split("-")
         min_p, max_p = p_range[0], p_range[1]
         
+        url = f"https://prom.ua/ua/search?search_term={material}+filament&price_local__gte={min_p}&price_local__lte={max_p}"
+        await message.answer(f"🧵 Пошук {material.upper()} ({min_p}-{max_p} грн):\n[Відкрити результати на Prom.ua]({url})", parse_mode="Markdown")
+    except:
+        await message.answer("⚠️ Помилка формату ціни.")
+
+# 4. ТРЕНДИ
+@dp.message(Command("trends"))
+async def trends_handler(message: types.Message):
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="🔥 MakerWorld Trends", url="https://makerworld.com/uk")],
+        [types.InlineKeyboardButton(text="🎬 TikTok 3D Ideas", url="https://www.tiktok.com/search/video?q=3d%20printing%20ideas")]
+    ])
+    await message.answer("🚀 **Свіжі ідеї для Dryguny:**", reply_markup=markup)
+
+# --- WEB SERVER ---
+
+async def handle_ping(request):
+    return web.Response(text="Dryguny AI is Running!")
+
+async def start_webserver():
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+# --- ГОЛОВНИЙ ЗАПУСК ---
+
+async def main():
+    await start_webserver()
+    await bot.delete_webhook(drop_pending_updates=True)
+    logging.info("Dryguny AI Bot запущено!")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Зупинка")
         url = f"https://prom.ua/ua/search?search_term={material}+filament&price_local__gte={min_p}&price_local__lte={max_p}"
         await message.answer(f"🧵 Пошук {material.upper()} ({min_p}-{max_p} грн):\n[Відкрити результати на Prom.ua]({url})", parse_mode="Markdown")
     except:
@@ -146,4 +199,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Зупинка")
+
 
