@@ -11,7 +11,6 @@
             background: var(--bg); color: white; font-family: 'Inter', sans-serif;
             margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center;
         }
-        /* Вкладки (Кнопки зверху) */
         .tabs { 
             display: flex; background: rgba(255,255,255,0.05); 
             border-radius: 15px; padding: 5px; margin-bottom: 20px; width: 100%; max-width: 360px;
@@ -34,11 +33,12 @@
         .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; text-shadow: 0 0 20px rgba(3,218,198,0.3); }
         
         label { display: block; margin: 15px 0 5px 5px; font-size: 13px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-        input { 
+        input, select { 
             width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
             background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
+            appearance: none; /* Для гарного вигляду select */
         }
-        input:focus { border-color: var(--purp); }
+        input:focus, select:focus { border-color: var(--purp); }
 
         .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
         .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
@@ -49,7 +49,6 @@
             font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px;
         }
 
-        /* Стиль трендів */
         .trend-item { 
             background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
             margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
@@ -69,6 +68,14 @@
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
+        <label>🖨️ Оберіть принтер</label>
+        <select id="printer" onchange="calc()">
+            <option value="150">Bambu Lab A1 (150W)</option>
+            <option value="80">Bambu Lab A1 Mini (80W)</option>
+            <option value="350">Bambu Lab P1S (350W)</option>
+            <option value="350">Bambu Lab P1P (350W)</option>
+        </select>
+
         <label>💰 Ціна пластику (грн/кг)</label>
         <input type="number" id="p" value="800" oninput="calc()">
         
@@ -88,17 +95,14 @@
 
     <div id="trends" class="card">
         <h3 style="margin-top:0">Актуальне зараз</h3>
-        
         <a href="https://makerworld.com/en/trending" class="trend-item" target="_blank">
             <div><b>MakerWorld Trends</b><span>Топ 3MF моделей</span></div>
             <div style="font-size:24px">🐉</div>
         </a>
-
         <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" target="_blank">
             <div><b>TikTok Viral</b><span>Що зараз "залітає"</span></div>
             <div style="font-size:24px">📈</div>
         </a>
-
         <a href="https://www.printables.com/model" class="trend-item" target="_blank">
             <div><b>Printables</b><span>Найкращі STL</span></div>
             <div style="font-size:24px">📦</div>
@@ -117,14 +121,21 @@
         }
 
         function calc() {
+            let printerPower = document.getElementById('printer').value; // Потужність у Ватах
             let plastic = document.getElementById('p').value || 0;
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
+            let tariff = 4.32; // Тариф грн/кВт
             
             document.getElementById('mLabel').innerText = markup + "%";
             
-            let base = (weight * (plastic / 1000)) + (time * 12); // 12 грн/год за світло та амортизацію
+            // Розрахунок світла: (Потужність/1000) * години * тариф
+            let electricity = (printerPower / 1000) * time * tariff;
+            
+            // Розрахунок бази: Пластик + Світло + Амортизація (додав 5 грн/год на запчастини)
+            let base = (weight * (plastic / 1000)) + electricity + (time * 5); 
+            
             let final = base * (1 + markup / 100);
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
@@ -133,9 +144,10 @@
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
+            let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            let text = `🚀 Dryguny Check:\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀 Dryguny Check:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
             tg.showAlert("Чек скопійовано! Вставляй клієнту.");
         }
