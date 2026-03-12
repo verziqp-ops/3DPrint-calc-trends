@@ -34,7 +34,7 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "🚀 **Dryguny AI Hub v3.0 активований!**\n\n"
+        "🚀 **Dryguny AI Hub активований!**\n\n"
         "Твій персональний ШІ-помічник готовий.\n\n"
         "📜 **Команди:**\n"
         "🤖 `/help [питання]` — запитати у ШІ (Gemini)\n"
@@ -47,31 +47,36 @@ async def start_handler(message: types.Message):
 # 1. РОЗУМНА ДОПОМОГА (GEMINI AI)
 @dp.message(Command("help"))
 async def ai_help_handler(message: types.Message):
-    # Отримуємо текст після команди
     user_query = message.text.replace("/help", "").strip()
     
-    # Якщо тексту немає, просимо його написати
     if not user_query:
         await message.answer("🆘 Опиши свою проблему після команди, наприклад:\n`/help відклеюється перший слой`", parse_mode="Markdown")
         return
 
-    # Якщо текст є — запускаємо ШІ
-    status_msg = await message.answer("🧠 *Dryguny AI аналізує проблему...*")
+    # 1. Надсилаємо початкове повідомлення
+    status_msg = await message.answer("🧠 *Dryguny AI аналізує проблему...*", parse_mode="Markdown")
 
     try:
-        # Додаємо інструкцію для Gemini
+        # 2. Запускаємо генерацію (через thread, щоб не вішати бота)
         full_prompt = f"{AI_INSTRUCTION}\n\nПитання: {user_query}"
-        response = ai_model.generate_content(full_prompt)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, lambda: ai_model.generate_content(full_prompt))
         
+        # 3. ВИПРАВЛЕНО: Чітко вказуємо текст і ID
         await bot.edit_message_text(
+            text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
             chat_id=message.chat.id,
             message_id=status_msg.message_id,
-            text=f"🤖 **Порада від Dryguny AI:**\n\n{response.text}",
             parse_mode="Markdown"
         )
     except Exception as e:
-        logging.error(e)
-        await bot.edit_message_text("⚠️ Не вдалося зв'язатися з ШІ. Перевір API-ключ Gemini!", message.chat.id, status_msg.message_id)
+        logging.error(f"AI Error: {e}")
+        # Якщо сталася помилка — теж коректно оновлюємо текст
+        await bot.edit_message_text(
+            text=f"⚠️ Помилка ШІ: {str(e)}",
+            chat_id=message.chat.id,
+            message_id=status_msg.message_id
+        )
 
 # 2. ПОШУК STL ФАЙЛІВ
 @dp.message(Command("find"))
@@ -143,4 +148,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Зупинка")
+
 
