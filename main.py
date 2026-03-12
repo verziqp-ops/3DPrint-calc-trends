@@ -41,16 +41,13 @@ async def trends_handler(message: types.Message):
         reply_markup=markup
     )
 
-import aiohttp
-from bs4 import BeautifulSoup
-
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
     try:
         args = message.text.split()
 
         if len(args) < 3:
-            await message.answer("Приклад:\n/filament pla 400-500")
+            await message.answer("Приклад:\n/filament pla 400-700")
             return
 
         material = args[1].lower()
@@ -61,9 +58,13 @@ async def filament_handler(message: types.Message):
 
         results = []
 
+        # --- список магазинів для пошуку ---
         shops = [
-            f"https://prom.ua/ua/search?search_term={material}+filament",
-            f"https://rozetka.com.ua/ua/search/?text={material}%20filament"
+            {"name": "Prom", "url": f"https://prom.ua/ua/search?search_term={material}+filament"},
+            {"name": "Rozetka", "url": f"https://rozetka.com.ua/ua/search/?text={material}%20filament"},
+            {"name": "Epicentr", "url": f"https://epicentrk.ua/ua/search/?q={material}+filament"},
+            {"name": "3DDevice", "url": f"https://3ddevice.com.ua/search?q={material}+filament"},
+            {"name": "3DPrintShop", "url": f"https://3dprintshop.com.ua/search?q={material}+filament"}
         ]
 
         headers = {
@@ -73,49 +74,56 @@ async def filament_handler(message: types.Message):
         async with aiohttp.ClientSession(headers=headers) as session:
 
             for shop in shops:
-                async with session.get(shop) as resp:
-                    html = await resp.text()
+                try:
+                    async with session.get(shop["url"]) as resp:
+                        html = await resp.text()
+                        soup = BeautifulSoup(html, "html.parser")
 
-                    soup = BeautifulSoup(html, "html.parser")
+                        # шукаємо всі блоки, які можуть містити назву і ціну
+                        products = soup.find_all("div")
 
-                    products = soup.find_all("a", href=True)
+                        for p in products:
 
-                    for p in products[:30]:
+                            text = p.get_text(" ").lower()
 
-                        text = p.get_text().lower()
+                            if material in text and "грн" in text:
 
-                        if material in text:
+                                # витягаємо всі числа у тексті
+                                numbers = [int(s) for s in text.replace(" ", "").split() if s.isdigit()]
 
-                            price_text = ''.join(filter(str.isdigit, text))
+                                for price in numbers:
 
-                            if price_text:
-                                price = int(price_text)
+                                    if min_price <= price <= max_price:
 
-                                if min_price <= price <= max_price:
-                                    link = p["href"]
+                                        link_tag = p.find("a", href=True)
+                                        if link_tag:
+                                            link = link_tag["href"]
+                                            if not link.startswith("http"):
+                                                link = shop["url"].split("/search")[0] + link
 
-                                    if not link.startswith("http"):
-                                        link = shop + link
+                                            results.append((text[:80], price, link, shop["name"]))
+                                            break
 
-                                    results.append((text[:60], price, link))
-
-                        if len(results) >= 5:
+                        # обмежимо результати, щоб не спамити
+                        if len(results) >= 10:
                             break
+                except Exception as e:
+                    logging.warning(f"Не вдалося парсити {shop['name']}: {e}")
+                    continue
 
         if not results:
             await message.answer("❌ Нічого не знайдено в цьому діапазоні.")
             return
 
         reply = f"🧵 {material.upper()} {min_price}-{max_price} грн:\n\n"
-
-        for i, r in enumerate(results, 1):
-            reply += f"{i}️⃣ {r[0]}\n💰 {r[1]} грн\n🔗 {r[2]}\n\n"
+        for i, r in enumerate(results[:10], 1):
+            reply += f"{i}️⃣ {r[0]}\n💰 {r[1]} грн ({r[3]})\n🔗 {r[2]}\n\n"
 
         await message.answer(reply)
 
     except Exception as e:
         logging.error(e)
-        await message.answer("⚠️ Помилка пошуку.")
+        await message.answer("⚠️ Помилка пошуку філаменту.")
         
 # Ехо-handler завжди останній
 @dp.message()
@@ -150,5 +158,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Бот зупинений.")
+
 
 
