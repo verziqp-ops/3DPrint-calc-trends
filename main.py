@@ -3,6 +3,7 @@ import asyncio
 import logging
 import urllib.parse
 import aiohttp
+import random
 import google.generativeai as genai
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -14,18 +15,17 @@ logging.basicConfig(level=logging.INFO)
 GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# стабільна модель
 ai_model = genai.GenerativeModel("gemini-1.5-flash")
 
 AI_INSTRUCTION = (
     "Ти — Dryguny AI, асистент бренду Dryguny. "
     "Твій власник — Макс. "
     "Ти експерт у 3D-друці, Bambu Lab та Blender. "
-    "Відповідай коротко, по справі і з емодзі."
+    "Відповідай коротко і з емодзі."
 )
 
 # --- КОНФІГУРАЦІЯ БОТА ---
-TOKEN = "8594286835:AAHiMtMF9goo8achqLiBvEW8cR858-ZpMaU"
+TOKEN = "8594286835:AAEcg2_T6olnaRzFyo45SbRGI-QPiSgAkDo"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -35,8 +35,12 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "🚀 **Dryguny AI Hub v3.3**\n"
-        "Команда `/help [питання]` для зв'язку з ШІ.",
+        "🚀 **Dryguny AI Hub v3.4**\n\n"
+        "Команди:\n"
+        "/help питання — запитати ШІ\n"
+        "/find модель — пошук STL\n"
+        "/filament pla 400-800 — пошук пластику\n"
+        "/trend — трендові моделі",
         parse_mode="Markdown"
     )
 
@@ -51,9 +55,10 @@ async def ai_help_handler(message: types.Message):
         await message.answer("🆘 Напиши питання!")
         return
 
-    status_msg = await message.answer("🧠 *Dryguny AI аналізує...*", parse_mode="Markdown")
+    status_msg = await message.answer("🧠 *Dryguny AI думає...*", parse_mode="Markdown")
 
     try:
+
         prompt = f"{AI_INSTRUCTION}\n\nПитання користувача: {user_query}"
 
         response = await asyncio.to_thread(
@@ -61,7 +66,7 @@ async def ai_help_handler(message: types.Message):
             prompt
         )
 
-        answer = response.text if response.text else "⚠️ Модель не повернула текст."
+        answer = response.text if response.text else "⚠️ Модель не дала відповідь."
 
         await bot.edit_message_text(
             text=f"🤖 **Відповідь:**\n\n{answer}",
@@ -80,7 +85,7 @@ async def ai_help_handler(message: types.Message):
             message_id=status_msg.message_id
         )
 
-# --- ПОШУК STL ---
+# --- ПОШУК STL НА КІЛЬКОХ САЙТАХ ---
 
 @dp.message(Command("find"))
 async def find_stl_handler(message: types.Message):
@@ -94,15 +99,33 @@ async def find_stl_handler(message: types.Message):
 
     markup = types.InlineKeyboardMarkup(
         inline_keyboard=[
+
             [types.InlineKeyboardButton(
                 text="💎 MakerWorld",
-                url=f"https://makerworld.com/en/models/search?keyword={q}"
+                url=f"https://makerworld.com/en/search/models?keyword={q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="🧰 Thingiverse",
+                url=f"https://www.thingiverse.com/search?q={q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="🧡 Printables",
+                url=f"https://www.printables.com/search/models?q={q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="🔎 Thangs",
+                url=f"https://thangs.com/search/{q}"
             )]
+
         ]
     )
 
     await message.answer(
-        f"🔍 Пошук: {query}",
+        f"🔍 Пошук STL: **{query}**",
+        parse_mode="Markdown",
         reply_markup=markup
     )
 
@@ -132,6 +155,56 @@ async def filament_handler(message: types.Message):
             "❌ Формат: `/filament pla 400-800`",
             parse_mode="Markdown"
         )
+
+# --- ТРЕНДОВІ МОДЕЛІ ---
+
+@dp.message(Command("trend"))
+async def trend_handler(message: types.Message):
+
+    trends = [
+
+        "Articulated Dragon",
+        "Flexi Shark",
+        "Fidget Cube",
+        "Phone Stand",
+        "Cable Organizer",
+        "Flexi Cat",
+        "Mini Octopus",
+        "Print-in-place Sword",
+        "Gear Spinner",
+        "Flexi Rex Dinosaur"
+    ]
+
+    model = random.choice(trends)
+
+    q = urllib.parse.quote(model)
+
+    markup = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+
+            [types.InlineKeyboardButton(
+                text="🎬 TikTok пошук",
+                url=f"https://www.tiktok.com/search?q=3d%20print%20{q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="💎 MakerWorld",
+                url=f"https://makerworld.com/en/search/models?keyword={q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="🧡 Printables",
+                url=f"https://www.printables.com/search/models?q={q}"
+            )]
+
+        ]
+    )
+
+    await message.answer(
+        f"🔥 **Трендова модель:**\n\n{model}",
+        parse_mode="Markdown",
+        reply_markup=markup
+    )
 
 # --- WEB SERVER ДЛЯ RENDER ---
 
