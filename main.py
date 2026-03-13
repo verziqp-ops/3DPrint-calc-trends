@@ -4,88 +4,34 @@ import logging
 import urllib.parse
 import aiohttp
 import random
-import google.generativeai as genai
+import re
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiohttp import web
 
 logging.basicConfig(level=logging.INFO)
 
-# --- КОНФІГУРАЦІЯ ШІ ---
-GOOGLE_API_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
-genai.configure(api_key=GOOGLE_API_KEY)
-
-ai_model = genai.GenerativeModel("gemini-1.5-flash")
-
-AI_INSTRUCTION = (
-    "Ти — Dryguny AI, асистент бренду Dryguny. "
-    "Твій власник — Макс. "
-    "Ти експерт у 3D-друці, Bambu Lab та Blender. "
-    "Відповідай коротко і з емодзі."
-)
-
-# --- КОНФІГУРАЦІЯ БОТА ---
-TOKEN = "8594286835:AAEcg2_T6olnaRzFyo45SbRGI-QPiSgAkDo"
+TOKEN = "8594286835:AAEDHt153sAHcHnYoc44IBcOlGZUV1u8-6k"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# --- START ---
+# ---------------- START ----------------
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "🚀 **Dryguny AI Hub v3.4**\n\n"
-        "Команди:\n"
-        "/help питання — запитати ШІ\n"
+        "🚀 **Dryguny Hub v6**\n\n"
         "/find модель — пошук STL\n"
-        "/filament pla 400-800 — пошук пластику\n"
-        "/trend — трендові моделі",
+        "/trend — трендові моделі\n"
+        "/trendvideo — вірусні відео 3D друку\n"
+        "/sell — популярні моделі для продажу\n"
+        "/idea — випадкова модель\n"
+        "/filament pla 400-800 — пошук філаменту",
         parse_mode="Markdown"
     )
 
-# --- AI HELP ---
-
-@dp.message(Command("help"))
-async def ai_help_handler(message: types.Message):
-
-    user_query = message.text.replace("/help", "").strip()
-
-    if not user_query:
-        await message.answer("🆘 Напиши питання!")
-        return
-
-    status_msg = await message.answer("🧠 *Dryguny AI думає...*", parse_mode="Markdown")
-
-    try:
-
-        prompt = f"{AI_INSTRUCTION}\n\nПитання користувача: {user_query}"
-
-        response = await asyncio.to_thread(
-            ai_model.generate_content,
-            prompt
-        )
-
-        answer = response.text if response.text else "⚠️ Модель не дала відповідь."
-
-        await bot.edit_message_text(
-            text=f"🤖 **Відповідь:**\n\n{answer}",
-            chat_id=message.chat.id,
-            message_id=status_msg.message_id,
-            parse_mode="Markdown"
-        )
-
-    except Exception as e:
-
-        logging.error(f"AI Error: {e}")
-
-        await bot.edit_message_text(
-            text="⚠️ Помилка моделі. Спробуй пізніше.",
-            chat_id=message.chat.id,
-            message_id=status_msg.message_id
-        )
-
-# --- ПОШУК STL НА КІЛЬКОХ САЙТАХ ---
+# ---------------- FIND STL ----------------
 
 @dp.message(Command("find"))
 async def find_stl_handler(message: types.Message):
@@ -101,22 +47,22 @@ async def find_stl_handler(message: types.Message):
         inline_keyboard=[
 
             [types.InlineKeyboardButton(
-                text="💎 MakerWorld",
+                text="MakerWorld",
                 url=f"https://makerworld.com/en/search/models?keyword={q}"
             )],
 
             [types.InlineKeyboardButton(
-                text="🧰 Thingiverse",
-                url=f"https://www.thingiverse.com/search?q={q}"
-            )],
-
-            [types.InlineKeyboardButton(
-                text="🧡 Printables",
+                text="Printables",
                 url=f"https://www.printables.com/search/models?q={q}"
             )],
 
             [types.InlineKeyboardButton(
-                text="🔎 Thangs",
+                text="Thingiverse",
+                url=f"https://www.thingiverse.com/search?q={q}"
+            )],
+
+            [types.InlineKeyboardButton(
+                text="Thangs",
                 url=f"https://thangs.com/search/{q}"
             )]
 
@@ -124,12 +70,12 @@ async def find_stl_handler(message: types.Message):
     )
 
     await message.answer(
-        f"🔍 Пошук STL: **{query}**",
+        f"🔎 Пошук STL: **{query}**",
         parse_mode="Markdown",
         reply_markup=markup
     )
 
-# --- ПОШУК ФІЛАМЕНТУ ---
+# ---------------- FILAMENT ----------------
 
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
@@ -145,73 +91,169 @@ async def filament_handler(message: types.Message):
         url = f"https://prom.ua/ua/search?search_term={material}+filament&price_local__gte={prices[0]}&price_local__lte={prices[1]}"
 
         await message.answer(
-            f"🧵 [Результати на Prom.ua]({url})",
+            f"🧵 [Результати філаменту]({url})",
             parse_mode="Markdown"
         )
 
     except:
 
-        await message.answer(
-            "❌ Формат: `/filament pla 400-800`",
-            parse_mode="Markdown"
-        )
+        await message.answer("❌ Формат: `/filament pla 400-800`")
 
-# --- ТРЕНДОВІ МОДЕЛІ ---
+# ---------------- PARSE MAKERWORLD ----------------
+
+async def get_models():
+
+    url = "https://makerworld.com/en/models"
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            html = await resp.text()
+
+    models = re.findall(r'/en/models/(\d+)', html)
+
+    models = list(dict.fromkeys(models))
+
+    return models
+
+# ---------------- TREND ----------------
 
 @dp.message(Command("trend"))
 async def trend_handler(message: types.Message):
 
-    trends = [
+    try:
 
-        "Articulated Dragon",
-        "Flexi Shark",
-        "Fidget Cube",
-        "Phone Stand",
-        "Cable Organizer",
-        "Flexi Cat",
-        "Mini Octopus",
-        "Print-in-place Sword",
-        "Gear Spinner",
-        "Flexi Rex Dinosaur"
+        models = await get_models()
+
+        models = models[:6]
+
+        buttons = []
+
+        for m in models:
+
+            link = f"https://makerworld.com/en/models/{m}"
+
+            buttons.append([
+                types.InlineKeyboardButton(
+                    text=f"🔥 Тренд {m}",
+                    url=link
+                )
+            ])
+
+        markup = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+        await message.answer(
+            "🔥 **Трендові моделі:**",
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+
+    except:
+
+        await message.answer("⚠️ Не вдалося отримати тренди.")
+
+# ---------------- SELL ----------------
+
+@dp.message(Command("sell"))
+async def sell_handler(message: types.Message):
+
+    try:
+
+        models = await get_models()
+
+        models = models[:5]
+
+        buttons = []
+
+        for m in models:
+
+            link = f"https://makerworld.com/en/models/{m}"
+
+            buttons.append([
+                types.InlineKeyboardButton(
+                    text=f"💰 Модель {m}",
+                    url=link
+                )
+            ])
+
+        markup = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+        await message.answer(
+            "💰 **Популярні моделі для продажу:**",
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+
+    except:
+
+        await message.answer("⚠️ Помилка пошуку моделей.")
+
+# ---------------- IDEA ----------------
+
+@dp.message(Command("idea"))
+async def idea_handler(message: types.Message):
+
+    try:
+
+        models = await get_models()
+
+        model = random.choice(models)
+
+        link = f"https://makerworld.com/en/models/{model}"
+
+        markup = types.InlineKeyboardMarkup(
+            inline_keyboard=[
+                [types.InlineKeyboardButton(
+                    text="🧠 Подивитись модель",
+                    url=link
+                )]
+            ]
+        )
+
+        await message.answer(
+            "🧠 **Ідея для друку:**",
+            parse_mode="Markdown",
+            reply_markup=markup
+        )
+
+    except:
+
+        await message.answer("⚠️ Не вдалося знайти модель.")
+
+# ---------------- TREND VIDEO ----------------
+
+@dp.message(Command("trendvideo"))
+async def trendvideo_handler(message: types.Message):
+
+    videos = [
+
+        "https://www.tiktok.com/search?q=3d%20print",
+        "https://www.youtube.com/results?search_query=3d+printing+viral",
+        "https://www.youtube.com/results?search_query=3d+print+timelapse",
+        "https://www.tiktok.com/search?q=3d%20printed%20dragon"
+
     ]
 
-    model = random.choice(trends)
-
-    q = urllib.parse.quote(model)
+    video = random.choice(videos)
 
     markup = types.InlineKeyboardMarkup(
         inline_keyboard=[
-
             [types.InlineKeyboardButton(
-                text="🎬 TikTok пошук",
-                url=f"https://www.tiktok.com/search?q=3d%20print%20{q}"
-            )],
-
-            [types.InlineKeyboardButton(
-                text="💎 MakerWorld",
-                url=f"https://makerworld.com/en/search/models?keyword={q}"
-            )],
-
-            [types.InlineKeyboardButton(
-                text="🧡 Printables",
-                url=f"https://www.printables.com/search/models?q={q}"
+                text="🎬 Подивитись відео",
+                url=video
             )]
-
         ]
     )
 
     await message.answer(
-        f"🔥 **Трендова модель:**\n\n{model}",
+        "🔥 **Вірусні відео 3D друку:**",
         parse_mode="Markdown",
         reply_markup=markup
     )
 
-# --- WEB SERVER ДЛЯ RENDER ---
+# ---------------- WEB SERVER ----------------
 
 async def handle_ping(request):
     return web.Response(text="OK")
-
-# --- MAIN ---
 
 async def main():
 
@@ -232,8 +274,6 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
 
     await dp.start_polling(bot)
-
-# --- RUN ---
 
 if __name__ == "__main__":
     asyncio.run(main())
