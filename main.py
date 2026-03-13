@@ -2,9 +2,7 @@ import os
 import asyncio
 import logging
 import urllib.parse
-import aiohttp
 import random
-import re
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -13,7 +11,6 @@ from aiohttp import web
 logging.basicConfig(level=logging.INFO)
 
 TOKEN = "8594286835:AAEDHt153sAHcHnYoc44IBcOlGZUV1u8-6k"
-
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -30,47 +27,51 @@ async def start_handler(message: types.Message):
         "/filament pla 400-800 — пошук філаменту"
     )
 
-# ---------------- GET MODELS ----------------
-async def get_models():
-    url = "https://makerworld.com/en/models"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            html = await resp.text()
-    models = re.findall(r'/en/models/(\d+)', html)
-    return list(dict.fromkeys(models))[:20]
-
 # ---------------- IDEA ----------------
 @dp.message(Command("idea"))
 async def idea_handler(message: types.Message):
-    models = await get_models()
-    if not models:
-        return await message.answer("❌ Не вдалося знайти модель")
-    model = random.choice(models)
-    link = f"https://makerworld.com/en/models/{model}"
-    await message.answer(f"🧠 Ідея для друку\n\n{link}")
+    keywords = ["dragon", "robot", "car", "figurine", "cube", "keychain", "animal", "gadget"]
+    keyword = random.choice(keywords)
+    q = urllib.parse.quote(keyword)
+    text = (
+        f"🧠 Ідея для 3D друку: {keyword}\n\n"
+        f"MakerWorld: https://makerworld.com/en/search/models?keyword={q}\n"
+        f"Printables: https://www.printables.com/search/models?q={q}\n"
+        f"Thingiverse: https://www.thingiverse.com/search?q={q}\n"
+        f"Thangs: https://thangs.com/search/{q}"
+    )
+    await message.answer(text)
 
 # ---------------- TREND ----------------
 @dp.message(Command("trend"))
 async def trend_handler(message: types.Message):
-    models = await get_models()
-    if not models:
-        return await message.answer("❌ Не вдалося отримати тренди")
-    models = models[:6]
+    trending_keywords = ["dragon", "miniature", "gadget", "robot", "vehicle", "figurine"]
     text = "🔥 Трендові моделі:\n\n"
-    for m in models:
-        text += f"https://makerworld.com/en/models/{m}\n"
+    for keyword in trending_keywords:
+        q = urllib.parse.quote(keyword)
+        text += (
+            f"{keyword}:\n"
+            f"MakerWorld: https://makerworld.com/en/search/models?keyword={q}\n"
+            f"Printables: https://www.printables.com/search/models?q={q}\n"
+            f"Thingiverse: https://www.thingiverse.com/search?q={q}\n"
+            f"Thangs: https://thangs.com/search/{q}\n\n"
+        )
     await message.answer(text)
 
 # ---------------- SELL ----------------
 @dp.message(Command("sell"))
 async def sell_handler(message: types.Message):
-    models = await get_models()
-    if not models:
-        return await message.answer("❌ Не знайдено моделей")
-    models = models[:5]
+    sell_keywords = ["keychain", "figurine", "gadget", "miniature"]
     text = "💰 Моделі які можна продавати:\n\n"
-    for m in models:
-        text += f"https://makerworld.com/en/models/{m}\n"
+    for keyword in sell_keywords:
+        q = urllib.parse.quote(keyword)
+        text += (
+            f"{keyword}:\n"
+            f"MakerWorld: https://makerworld.com/en/search/models?keyword={q}\n"
+            f"Printables: https://www.printables.com/search/models?q={q}\n"
+            f"Thingiverse: https://www.thingiverse.com/search?q={q}\n"
+            f"Thangs: https://thangs.com/search/{q}\n\n"
+        )
     await message.answer(text)
 
 # ---------------- FIND ----------------
