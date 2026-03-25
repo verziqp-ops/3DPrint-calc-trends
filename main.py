@@ -8,13 +8,17 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiohttp import web
 
+# 1. Логування
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc"
+# 2. Токен та ініціалізація
+# Порада: на Render додай BOT_TOKEN в Environment Variables
+TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# ---------------- START ----------------
+# ---------------- КОМАНДИ БОТА ----------------
+
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
@@ -23,87 +27,83 @@ async def start_handler(message: types.Message):
         "/idea — випадкова модель\n"
         "/trend — трендові моделі\n"
         "/sell — моделі для продажу\n"
-        "/trendvideo — вірусні відео\n"
-        "/filament pla 400-800 eSun — філамент\n"
+        "/filament pla 400-800 — пошук пластику\n"
         "/viral — вірусні моделі\n"
         "/top — топ моделі"
     )
 
-# ---------------- IDEA ----------------
 @dp.message(Command("idea"))
 async def idea_handler(message: types.Message):
     keywords = ["dragon", "robot", "car", "figurine", "cube", "keychain", "animal", "gadget"]
     keyword = random.choice(keywords)
     q = urllib.parse.quote(keyword)
-
     text = (
         f"🧠 Ідея: {keyword}\n\n"
-        f"MakerWorld:\nhttps://makerworld.com/en/search/models?keyword={q}\n\n"
-        f"Printables:\nhttps://www.printables.com/search/models?q={q}\n\n"
-        f"Thingiverse:\nhttps://www.thingiverse.com/search?q={q}\n\n"
-        f"Thangs:\nhttps://thangs.com/search/{q}"
+        f"MakerWorld: https://makerworld.com/en/search/models?keyword={q}\n"
+        f"Printables: https://www.printables.com/search/models?q={q}\n"
+        f"Thingiverse: https://www.thingiverse.com/search?q={q}"
     )
-
     await message.answer(text)
 
-# ---------------- TREND ----------------
-@dp.message(Command("trend"))
-async def trend_handler(message: types.Message):
-
-    text = (
-        "🔥 Трендові моделі:\n\n"
-        "MakerWorld:\nhttps://makerworld.com/en/models\n\n"
-        "Printables:\nhttps://www.printables.com/model?period=week&sort=trending\n\n"
-        "Thingiverse:\nhttps://www.thingiverse.com/?sort=popular\n\n"
-        "TikTok:\nhttps://www.tiktok.com/search?q=3d%20print"
-    )
-
-    await message.answer(text)
-
-# ---------------- SELL ----------------
-@dp.message(Command("sell"))
-async def sell_handler(message: types.Message):
-
-    text = (
-        "💰 Що продавати:\n\n"
-        "Flexi toys:\nhttps://makerworld.com/en/search/models?keyword=flexi\n\n"
-        "Keychains:\nhttps://makerworld.com/en/search/models?keyword=keychain\n\n"
-        "Phone stands:\nhttps://makerworld.com/en/search/models?keyword=phone%20stand\n\n"
-        "Fidget toys:\nhttps://makerworld.com/en/search/models?keyword=fidget\n\n"
-        "TikTok:\nhttps://www.tiktok.com/search?q=3d%20printed%20toys"
-    )
-
-    await message.answer(text)
-
-# ---------------- FIND ----------------
 @dp.message(Command("find"))
 async def find_handler(message: types.Message):
     query = message.text.replace("/find", "").strip()
-
     if not query:
-        return await message.answer("❌ Напиши що шукати")
-
+        return await message.answer("❌ Напиши що шукати (наприклад: /find dragon)")
+    
     q = urllib.parse.quote(query)
-
     markup = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="MakerWorld", url=f"https://makerworld.com/en/search/models?keyword={q}")],
         [types.InlineKeyboardButton(text="Printables", url=f"https://www.printables.com/search/models?q={q}")],
-        [types.InlineKeyboardButton(text="Thingiverse", url=f"https://www.thingiverse.com/search?q={q}")],
-        [types.InlineKeyboardButton(text="Thangs", url=f"https://thangs.com/search/{q}")]
+        [types.InlineKeyboardButton(text="Thingiverse", url=f"https://www.thingiverse.com/search?q={q}")]
     ])
-
     await message.answer(f"🔎 Пошук STL: {query}", reply_markup=markup)
 
-# ---------------- TREND VIDEO ----------------
-@dp.message(Command("trendvideo"))
-async def trendvideo_handler(message: types.Message):
+@dp.message(Command("filament"))
+async def filament_handler(message: types.Message):
+    try:
+        args = message.text.split()
+        material = args[1]
+        prices = args[2].split("-")
+        url = f"https://prom.ua/ua/search?search_term={material}+filament&price_local__gte={prices[0]}&price_local__lte={prices[1]}"
+        await message.answer(f"🧵 Результати філаменту ({material}):\n{url}")
+    except:
+        await message.answer("❌ Формат: /filament pla 400-800")
 
-    videos = [
-        "https://www.tiktok.com/search?q=3d%20print",
-        "https://www.youtube.com/results?search_query=3d+printing+viral",
-        "https://www.youtube.com/results?search_query=3d+print+timelapse",
-        "https://www.tiktok.com/search?q=3d%20printed%20dragon"
-    ]
+@dp.message(Command("trend", "sell", "viral", "top"))
+async def combined_handler(message: types.Message):
+    # Універсальний обробник для посилань
+    urls = "🔥 MakerWorld: https://makerworld.com/en/models\n📦 Printables: https://www.printables.com/model"
+    await message.answer(f"Ось корисні посилання:\n\n{urls}")
+
+# ---------------- WEB SERVER (ДЛЯ RENDER) ----------------
+
+async def handle_ping(request):
+    return web.Response(text="Bot running")
+
+async def main():
+    # Налаштування сервера
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    # Використовуємо порт від Render
+    port = int(os.environ.get("PORT", 8080))
+    await web.TCPSite(runner, "0.0.0.0", port).start()
+    logging.info(f"✅ Сервер запущено на порту {port}")
+
+    # Запуск бота
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+
+# ---------------- ТОЧКА ВХОДУ ----------------
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Бот зупинений")
 
     video = random.choice(videos)
 
