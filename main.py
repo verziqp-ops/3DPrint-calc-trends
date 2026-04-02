@@ -63,7 +63,7 @@ async def find_handler(message: types.Message):
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
     try:
-        # Очікуємо формат: /filament pla 300-500
+        # Очікуваний формат: /filament pla 300-500
         args = message.text.split()
         if len(args) < 3:
             return await message.answer("❌ Формат: `/filament [тип] [ціна_мін-макс]`\nПриклад: `/filament pla 400-600`", parse_mode="Markdown")
@@ -72,38 +72,33 @@ async def filament_handler(message: types.Message):
         price_range = args[2]
         p_min, p_max = price_range.split("-")
 
-        # Формуємо запити
-        q_encoded = urllib.parse.quote(f"{material} filament")
+        q_encoded = urllib.parse.quote(material)
+
+        # 1. Google (використовуємо оператор діапазону цін ..)
+        google_url = f"https://www.google.com/search?q={q_encoded}+філамент+купити+{p_min}..{p_max}+грн"
         
-        # 1. Google (загальний пошук)
-        google_url = f"https://www.google.com/search?q={q_encoded}+купити+україна+{p_max}+грн"
+        # 2. Prom.ua (прямий фільтр у параметрах URL)
+        prom_url = f"https://prom.ua/ua/search?search_term={q_encoded}+filament&price_local__gte={p_min}&price_local__lte={p_max}"
         
-        # 2. Prom.ua (з твоїм фільтром ціни)
-        prom_url = f"https://prom.ua/ua/search?search_term={q_encoded}&price_local__gte={p_min}&price_local__lte={p_max}"
+        # 3. Rozetka (фільтрація через параметр price=min-max)
+        rozetka_url = f"https://rozetka.com.ua/search/?text={q_encoded}+filament&price={p_min}-{p_max}"
         
-        # 3. Rozetka
-        rozetka_url = f"https://rozetka.com.ua/search/?text={q_encoded}"
-        
-        # 4. 3DPlast (популярний виробник)
-        plast_url = f"https://3dplast.biz.ua/index.php?route=product/search&search={material}"
-        
-        # 5. Monofilament (якісний укр. бренд)
-        mono_url = f"https://monofilament.com.ua/index.php?route=product/search&search={material}"
+        # 4. Filament.org.ua (додаємо ціну в пошуковий запит для сайту)
+        filament_ua_url = f"https://filament.org.ua/ua/product_list?search_term={q_encoded}+{p_max}грн"
 
         text = (
             f"🧵 **Пошук пластику:** `{material.upper()}`\n"
-            f"💰 Бюджет: `{price_range}` грн\n\n"
-            f"🌐 [Google Пошук]({google_url})\n"
+            f"💰 Фільтр ціни: `{p_min} — {p_max}` грн\n\n"
+            f"🌐 [Google (діапазон ціни)]({google_url})\n"
             f"🟨 [Prom.ua (фільтр ціни)]({prom_url})\n"
-            f"🟦 [Rozetka]({rozetka_url})\n"
-            f"🏭 [3DPlast (Виробник)]({plast_url})\n"
-            f"🧵 [Monofilament]({mono_url})"
+            f"🟦 [Rozetka (фільтр ціни)]({rozetka_url})\n"
+            f"🔥 [Filament.org.ua]({filament_ua_url})"
         )
 
         await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True)
     except Exception:
-        await message.answer("❌ Помилка! Перевір формат: `/filament pla 300-500`", parse_mode="Markdown")
-
+        await message.answer("❌ Помилка! Формат має бути: `/filament pla 300-500`", parse_mode="Markdown")
+        
 @dp.message(Command("viral"))
 async def viral_handler(message: types.Message):
     text = (
