@@ -10,10 +10,15 @@ from aiohttp import web
 
 # 1. НАЛАШТУВАННЯ ЛОГУВАННЯ
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 2. ІНІЦІАЛІЗАЦІЯ БОТА
-# Токен обов'язково додай у "Environment Variables" на Render з назвою BOT_TOKEN
-TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
+# На Render обов'язково додай змінну оточення BOT_TOKEN
+TOKEN = os.environ.get("BOT_TOKEN")
+if not TOKEN:
+    # Твій токен (краще тримати ТІЛЬКИ в налаштуваннях Render, а не в коді!)
+    TOKEN = "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc"
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -28,7 +33,6 @@ async def start_handler(message: types.Message):
         "🧠 `/idea` — випадкова ідея для наступного друку\n"
         "🧵 `/filament [тип] [ціна]` — пошук пластику (напр. `/filament pla 300-600`)\n"
         "🔥 `/viral` — вірусні та трендові моделі\n"
-        "🏆 `/top` — найкращі моделі з популярних сайтів\n"
         "📈 `/trend` — що зараз популярно у світі 3D",
         parse_mode="Markdown"
     )
@@ -63,7 +67,6 @@ async def find_handler(message: types.Message):
 @dp.message(Command("filament"))
 async def filament_handler(message: types.Message):
     try:
-        # Формат: /filament pla 300-500
         args = message.text.split()
         if len(args) < 3:
             return await message.answer("❌ Формат: `/filament [тип] [ціна_мін-макс]`\nПриклад: `/filament pla 400-600`", parse_mode="Markdown")
@@ -71,10 +74,8 @@ async def filament_handler(message: types.Message):
         material = args[1].lower()
         price_range = args[2]
         p_min, p_max = price_range.split("-")
-
         q_encoded = urllib.parse.quote(material)
 
-        # Словник категорій для filament.org.ua
         categories = {
             "pla": "g129478502-pla",
             "petg": "g129479663-petg-copet",
@@ -84,26 +85,85 @@ async def filament_handler(message: types.Message):
             "wood": "g148300313-wood-pla"
         }
 
-        # Визначаємо частину URL для категорій
-        cat_path = categories.get(material, "product_list") # Якщо немає в списку, йде на загальний пошук
-        
-        # 1. Filament.org.ua (з точними фільтрами)
+        cat_path = categories.get(material, "product_list")
         if cat_path != "product_list":
             filament_ua_url = f"https://filament.org.ua/ua/{cat_path}?price_unit__lte={p_max}&price_unit__gte={p_min}"
         else:
             filament_ua_url = f"https://filament.org.ua/ua/product_list?search_term={q_encoded}&price_unit__lte={p_max}&price_unit__gte={p_min}"
 
-        # 2. Google
         google_url = f"https://www.google.com/search?q={q_encoded}+філамент+купити+{p_min}..{p_max}+грн"
-        
-        # 3. Prom.ua
         prom_url = f"https://prom.ua/ua/search?search_term={q_encoded}+filament&price_local__gte={p_min}&price_local__lte={p_max}"
-        
-        # 4. Rozetka
         rozetka_url = f"https://rozetka.com.ua/search/?text={q_encoded}+filament&price={p_min}-{p_max}"
 
         text = (
             f"🧵 **Результати для:** `{material.upper()}`\n"
+            f"💰 Бюджет: `{p_min} — {p_max}` грн\n\n"
+            f"🔥 [Filament.org.ua]({filament_ua_url})\n"
+            f"🟨 [Prom.ua]({prom_url})\n"
+            f"🟦 [Rozetka]({rozetka_url})\n"
+            f"🌐 [Google Пошук]({google_url})"
+        )
+        await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True)
+    except Exception:
+        await message.answer("❌ Помилка! Формат: `/filament pla 300-500`", parse_mode="Markdown")
+
+@dp.message(Command("viral"))
+async def viral_handler(message: types.Message):
+    text = (
+        "🔥 **Вірусні моделі для твого каналу:**\n\n"
+        "• [TikTok Trends](https://www.tiktok.com/search?q=3d%20printed%20gadgets)\n"
+        "• [Flexi Animals](https://makerworld.com/en/search/models?keyword=flexi)\n"
+        "• [Fidget Tiles](https://makerworld.com/en/search/models?keyword=fidget%20toy)"
+    )
+    await message.answer(text, parse_mode="Markdown")
+
+@dp.message(Command("top", "trend"))
+async def top_handler(message: types.Message):
+    text = (
+        "🏆 **ТОП моделі з усього світу:**\n\n"
+        "• [MakerWorld Hot](https://makerworld.com/en/models)\n"
+        "• [Printables Popular](https://www.printables.com/model?sort=popular)\n"
+        "• [Thangs Search](https://thangs.com)"
+    )
+    await message.answer(text, parse_mode="Markdown")
+
+# ---------------- ВЕБ-СЕРВЕР ТА ПАРАЛЕЛЬНИЙ ЗАПУСК ----------------
+
+async def handle_ping(request):
+    return web.Response(text="Dryguny Bot is Running! 🚀", status=200)
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"✅ Web server is live on port {port}")
+    return runner
+
+async def main():
+    # Запускаємо веб-сервер
+    runner = await start_web_server()
+
+    # Очищення старих оновлень
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    # Одночасний запуск болінгу та очікування (паралельно з сервером)
+    try:
+        logger.info("🚀 Starting Bot Polling...")
+        await dp.start_polling(bot)
+    finally:
+        await runner.cleanup()
+        await bot.session.close()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Бот зупинений")
             f"💰 Бюджет: `{p_min} — {p_max}` грн\n\n"
             f"🔥 [Filament.org.ua (Категорія)]({filament_ua_url})\n"
             f"🟨 [Prom.ua (Фільтр)]({prom_url})\n"
