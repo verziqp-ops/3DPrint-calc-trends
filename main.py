@@ -13,10 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 2. ІНІЦІАЛІЗАЦІЯ БОТА
-# На Render обов'язково додай змінну оточення BOT_TOKEN
 TOKEN = os.environ.get("BOT_TOKEN")
 if not TOKEN:
-    # Твій токен (краще тримати ТІЛЬКИ в налаштуваннях Render, а не в коді!)
     TOKEN = "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc"
 
 bot = Bot(token=TOKEN)
@@ -113,26 +111,27 @@ async def viral_handler(message: types.Message):
         "🔥 **Вірусні моделі для твого каналу:**\n\n"
         "• [TikTok Trends](https://www.tiktok.com/search?q=3d%20printed%20gadgets)\n"
         "• [Flexi Animals](https://makerworld.com/en/search/models?keyword=flexi)\n"
-        "• [Fidget Tiles](https://makerworld.com/en/search/models?keyword=fidget%20toy)"
+        "• [Fidget & Stress Relief](https://makerworld.com/en/search/models?keyword=fidget)"
     )
     await message.answer(text, parse_mode="Markdown")
 
-@dp.message(Command("top", "trend"))
+@dp.message(Command("trend", "top"))
 async def top_handler(message: types.Message):
     text = (
         "🏆 **ТОП моделі з усього світу:**\n\n"
         "• [MakerWorld Hot](https://makerworld.com/en/models)\n"
         "• [Printables Popular](https://www.printables.com/model?sort=popular)\n"
-        "• [Thangs Search](https://thangs.com)"
+        "• [Thangs (3D Search Engine)](https://thangs.com)"
     )
     await message.answer(text, parse_mode="Markdown")
 
-# ---------------- ВЕБ-СЕРВЕР ТА ПАРАЛЕЛЬНИЙ ЗАПУСК ----------------
+# ---------------- ВЕБ-СЕРВЕР ТА ЗАПУСК ----------------
 
 async def handle_ping(request):
-    return web.Response(text="Dryguny Bot is Running! 🚀", status=200)
+    return web.Response(text="Dryguny Bot is Running! 🚀")
 
-async def start_web_server():
+async def main():
+    # Налаштовуємо веб-сервер для Render (Keep-alive)
     app = web.Application()
     app.router.add_get("/", handle_ping)
     runner = web.AppRunner(app)
@@ -142,16 +141,9 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     logger.info(f"✅ Web server is live on port {port}")
-    return runner
 
-async def main():
-    # Запускаємо веб-сервер
-    runner = await start_web_server()
-
-    # Очищення старих оновлень
+    # Запуск бота
     await bot.delete_webhook(drop_pending_updates=True)
-
-    # Одночасний запуск болінгу та очікування (паралельно з сервером)
     try:
         logger.info("🚀 Starting Bot Polling...")
         await dp.start_polling(bot)
@@ -164,66 +156,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.info("Бот зупинений")
-            f"💰 Бюджет: `{p_min} — {p_max}` грн\n\n"
-            f"🔥 [Filament.org.ua (Категорія)]({filament_ua_url})\n"
-            f"🟨 [Prom.ua (Фільтр)]({prom_url})\n"
-            f"🟦 [Rozetka (Фільтр)]({rozetka_url})\n"
-            f"🌐 [Google Пошук]({google_url})"
-        )
-
-        await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True)
-    except Exception:
-        await message.answer("❌ Помилка! Формат: `/filament pla 300-500`", parse_mode="Markdown")
-
-        
-@dp.message(Command("viral"))
-async def viral_handler(message: types.Message):
-    text = (
-        "🔥 **Вірусні моделі для твого каналу:**\n\n"
-        "• [TikTok Trends](https://www.tiktok.com/search?q=3d%20printed%20gadgets)\n"
-        "• [Flexi Animals](https://makerworld.com/en/search/models?keyword=flexi)\n"
-        "• [Fidgets & Stress Relief](https://makerworld.com/en/search/models?keyword=fidget)\n"
-        "• [Articulated Models](https://makerworld.com/en/search/models?keyword=articulated)"
-    )
-    await message.answer(text, parse_mode="Markdown")
-
-@dp.message(Command("top", "trend"))
-async def top_handler(message: types.Message):
-    text = (
-        "🏆 **ТОП моделі з усього світу:**\n\n"
-        "• [MakerWorld (Bambu Lab)](https://makerworld.com/en/models)\n"
-        "• [Printables Popular](https://www.printables.com/model?sort=popular)\n"
-        "• [Thingiverse Hot](https://www.thingiverse.com/?sort=popular)\n"
-        "• [Thangs (3D Search Engine)](https://thangs.com)"
-    )
-    await message.answer(text, parse_mode="Markdown")
-
-# ---------------- ВЕБ-СЕРВЕР ДЛЯ RENDER (KEEP-ALIVE) ----------------
-
-async def handle_ping(request):
-    return web.Response(text="Dryguny Bot is Running!")
-
-async def main():
-    # Налаштовуємо сервер, щоб Render не вимикав бота
-    app = web.Application()
-    app.router.add_get("/", handle_ping)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    
-    # Використовуємо PORT, який надає Render автоматично
-    port = int(os.environ.get("PORT", 8080))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    logging.info(f"✅ Web server is live on port {port}")
-
-    # Запуск бота (видаляємо старі оновлення і стартуємо)
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
-
-# ---------------- ЗАПУСК ----------------
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logging.info("Бот зупинений")
