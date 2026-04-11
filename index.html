@@ -59,10 +59,11 @@
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid var(--purp); cursor: pointer;
+            border-left: 4px solid var(--purp); cursor: pointer; transition: 0.2s;
         }
+        .history-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
-        
         input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--cyan); cursor: pointer; }
 
         .zsu-stats {
@@ -146,7 +147,7 @@
         </div>
 
         <div id="history-container" style="margin-top: 25px;">
-            <label>📜 Останні 5 розрахунків</label>
+            <label>📜 ІСТОРІЯ (Тисни для відновлення)</label>
             <div id="history-list"></div>
         </div>
     </div>
@@ -177,13 +178,14 @@
             { name: "Rainbow (Silk)", hex: "linear-gradient(45deg, red, blue, green)" }
         ];
 
+        // Завантаження збережених даних
         document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
         updateZSUDisplay();
         renderColors();
         renderHistory();
 
         function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
-        function saveUrl(i, val) { localStorage.setItem('dry_url_' + i, val); }
+        function saveUrl(i, val) { localStorage.setItem('dry_url_v2_' + i, val); }
 
         function updateZSUDisplay() {
             let total = localStorage.getItem('total_zsu_donated') || 0;
@@ -192,7 +194,7 @@
 
         function renderColors() {
             let html = bambuColors.map((c, i) => {
-                let saved = localStorage.getItem('dry_url_' + i) || "";
+                let saved = localStorage.getItem('dry_url_v2_' + i) || "";
                 return `
                 <div class="color-item">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
@@ -234,14 +236,14 @@
             let name = document.getElementById('p1_name').value || "Деталь";
             let ship = document.getElementById('shipping').value;
             let time = document.getElementById('deadline').value;
-            let pack = document.getElementById('pack_check').checked ? "Так (40 ₴)" : "Ні";
+            let isPacked = document.getElementById('pack_check').checked ? "Так (40 ₴)" : "Ні";
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
             let sel = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
                 let i = el.getAttribute('data-index');
-                let url = localStorage.getItem('dry_url_' + i);
+                let url = localStorage.getItem('dry_url_v2_' + i);
                 sel.push("• " + el.getAttribute('data-name') + (url ? ": " + url : ""));
             });
             let colText = sel.length > 0 ? `\n🎨 Колір:\n${sel.join('\n')}` : "";
@@ -249,32 +251,42 @@
             let totalZsu = parseInt(localStorage.getItem('total_zsu_donated') || 0) + zsu;
             if(zsu > 0) { localStorage.setItem('total_zsu_donated', totalZsu); updateZSUDisplay(); }
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n📦 Пакування: ${pack}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${totalZsu} ₴\n\n🛠 Дякуємо за замовлення!`;
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n📦 Пакування: ${isPacked}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${totalZsu} ₴\n\n🛠 Дякуємо за замовлення!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("Чек скопійовано!");
+                tg.showAlert("Чек скопійовано та збережено!");
                 saveHistory(name, res);
             });
         }
 
         function saveHistory(name, price) {
-            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_history_final') || '[]');
             h.unshift({
                 name, price,
-                w: document.getElementById('w').value, t: document.getElementById('t').value,
-                p: document.getElementById('p').value, m: document.getElementById('m').value,
-                b: document.getElementById('b').value, pr: document.getElementById('printer').value,
-                pk: document.getElementById('pack_check').checked, zs: document.getElementById('zsu_amount').value,
+                w: document.getElementById('w').value,
+                t: document.getElementById('t').value,
+                p: document.getElementById('p').value,
+                m: document.getElementById('m').value,
+                b: document.getElementById('b').value,
+                pr: document.getElementById('printer').value,
+                pk: document.getElementById('pack_check').checked,
+                zs: document.getElementById('zsu_amount').value,
+                ship: document.getElementById('shipping').value,
+                time: document.getElementById('deadline').value,
                 date: new Date().toLocaleTimeString()
             });
             if(h.length > 5) h.pop();
-            localStorage.setItem('dry_v5', JSON.stringify(h));
+            localStorage.setItem('dry_history_final', JSON.stringify(h));
             renderHistory();
         }
 
         function restore(i) {
-            let d = JSON.parse(localStorage.getItem('dry_v5'))[i];
+            let h = JSON.parse(localStorage.getItem('dry_history_final') || '[]');
+            let d = h[i];
+            if(!d) return;
+
+            // Відновлення всіх полів
             document.getElementById('p1_name').value = d.name;
             document.getElementById('w').value = d.w;
             document.getElementById('t').value = d.t;
@@ -284,16 +296,28 @@
             document.getElementById('printer').value = d.pr;
             document.getElementById('pack_check').checked = d.pk;
             document.getElementById('zsu_amount').value = d.zs || 0;
-            calc();
-            tg.showAlert("Дані відновлено!");
+            if(d.ship) document.getElementById('shipping').value = d.ship;
+            if(d.time) document.getElementById('deadline').value = d.time;
+
+            calc(); // Перерахунок ціни
+            tg.showAlert("Дані замовлення «" + d.name + "» відновлено!");
+            tg.HapticFeedback.impactOccurred('medium');
         }
 
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
-            document.getElementById('history-list').innerHTML = h.map((x, i) => `
+            let h = JSON.parse(localStorage.getItem('dry_history_final') || '[]');
+            let list = document.getElementById('history-list');
+            if(h.length === 0) {
+                list.innerHTML = "<p style='font-size:12px; color:#555; text-align:center;'>Тут з'являться твої останні замовлення</p>";
+                return;
+            }
+            list.innerHTML = h.map((x, i) => `
                 <div class="history-item" onclick="restore(${i})">
-                    <span>${x.name} <small>(${x.date})</small></span>
-                    <b>${x.price}</b>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight:bold;">${x.name}</span>
+                        <small style="color:#888; font-size:10px;">${x.date} | ${x.w}г | ${x.t}год</small>
+                    </div>
+                    <b style="color:var(--cyan); font-size:18px;">${x.price}</b>
                 </div>`).join('');
         }
 
