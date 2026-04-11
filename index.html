@@ -33,7 +33,7 @@
         .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; text-shadow: 0 0 20px rgba(3,218,198,0.3); }
         
         label { display: block; margin: 15px 0 5px 5px; font-size: 13px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-        input, select { 
+        input[type="number"], input[type="text"], select { 
             width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
             background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
             appearance: none;
@@ -41,6 +41,13 @@
         input:focus, select:focus { border-color: var(--purp); }
 
         .profile-name-input { padding: 8px; font-size: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px dashed #555; }
+
+        .pack-switch {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin: 10px 0;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .pack-switch input { width: 20px; height: 20px; accent-color: var(--purp); }
 
         .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
         .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
@@ -56,14 +63,6 @@
             padding: 10px; border-radius: 12px; width: 48%; font-size: 11px; cursor: pointer;
         }
 
-        .trend-item { 
-            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
-            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-            text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.05);
-        }
-        .trend-item b { color: var(--purp); display: block; font-size: 16px; }
-        .trend-item span { font-size: 12px; color: #777; }
-        
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
@@ -102,8 +101,10 @@
         <label>💰 Ціна пластику (грн/кг)</label>
         <input type="number" id="p" value="800" oninput="calc()">
 
-        <label>📦 Пакування (грн)</label>
-        <input type="number" id="pack" value="0" oninput="calc()" placeholder="Вартість коробки...">
+        <label class="pack-switch">
+            <span>📦 Крафт пакування (40₴)</span>
+            <input type="checkbox" id="pack_check" onchange="calc()">
+        </label>
         
         <label>⚖️ Вага деталі (грами)</label>
         <input type="number" id="w" placeholder="Введіть вагу..." oninput="calc()">
@@ -121,17 +122,13 @@
 
     <div id="trends" class="card">
         <h3 style="margin-top:0">Актуальне зараз</h3>
-        <a href="https://makerworld.com/uk" class="trend-item" target="_blank">
-            <div><b>MakerWorld Trends</b><span>Топ 3MF моделей</span></div>
+        <a href="https://makerworld.com/uk" class="trend-item" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: white;">
+            <div><b style="color: var(--purp);">MakerWorld Trends</b><span style="font-size: 12px; color: #777;">Топ 3MF моделей</span></div>
             <div style="font-size:24px">🐉</div>
         </a>
-        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" target="_blank">
-            <div><b>TikTok Viral</b><span>Що зараз "залітає"</span></div>
+        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: white;">
+            <div><b style="color: var(--purp);">TikTok Viral</b><span style="font-size: 12px; color: #777;">Що зараз "залітає"</span></div>
             <div style="font-size:24px">📈</div>
-        </a>
-        <a href="https://www.printables.com/model" class="trend-item" target="_blank">
-            <div><b>Printables</b><span>Найкращі STL</span></div>
-            <div style="font-size:24px">📦</div>
         </a>
     </div>
 
@@ -139,7 +136,6 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Завантажуємо назви профілів при старті
         window.onload = function() {
             for(let i=1; i<=2; i++) {
                 const saved = localStorage.getItem('dryguny_profile_' + i);
@@ -163,7 +159,7 @@
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
-            let packaging = parseFloat(document.getElementById('pack').value) || 0;
+            let packaging = document.getElementById('pack_check').checked ? 40 : 0;
             let tariff = 4.32; 
             
             document.getElementById('mLabel').innerText = markup + "%";
@@ -180,7 +176,6 @@
                 name: document.getElementById('p' + id + '_name').value,
                 p: document.getElementById('p').value,
                 m: document.getElementById('m').value,
-                pack: document.getElementById('pack').value,
                 printer: document.getElementById('printer').value
             };
             localStorage.setItem('dryguny_profile_' + id, JSON.stringify(profile));
@@ -193,7 +188,6 @@
                 const profile = JSON.parse(saved);
                 document.getElementById('p').value = profile.p;
                 document.getElementById('m').value = profile.m;
-                document.getElementById('pack').value = profile.pack;
                 document.getElementById('printer').value = profile.printer;
                 if(profile.name) document.getElementById('p' + id + '_name').value = profile.name;
                 calc();
@@ -206,11 +200,11 @@
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
-            let pack = document.getElementById('pack').value || 0;
+            let isPacked = document.getElementById('pack_check').checked ? "Крафт (40₴)" : "Стандарт";
             let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n📦 Пакування: ${pack}₴\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n📦 Пакування: ${isPacked}\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
             tg.showAlert("Чек скопійовано!");
         }
