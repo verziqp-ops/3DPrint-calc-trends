@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v13</title>
+    <title>Dryguny Hub v14</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -77,7 +77,6 @@
 
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
         .reset-btn { color: #ff4444; font-size: 10px; background: none; border: none; text-decoration: underline; cursor: pointer; margin-top: 5px; }
-        .discount-badge { font-size: 10px; color: var(--cyan); margin-top: -10px; display: block; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -103,7 +102,7 @@
                 <input type="number" id="qty" value="1" min="1" oninput="calc()">
             </div>
         </div>
-        <span id="discount_info" class="discount_badge" style="display:none; color: var(--cyan); font-size: 10px; margin-left:5px;">🔥 Знижка 10% активована!</span>
+        <span id="discount_info" style="display:none; color: var(--cyan); font-size: 10px; margin-left:5px;">🔥 Знижка 10% активована!</span>
 
         <div class="row">
             <div>
@@ -208,22 +207,20 @@
         tg.expand();
 
         const drygunyColors = [
-            { name: "Basic Purple", url: "https://filamentcolors.xyz/media/bambu-lab-purple-pla-4355-front_Mk8R6XC.jpg" },
-            { name: "Basic Pink", url: "https://filamentcolors.xyz/media/2023-08-02--10-19-08-front_Cdj1pMC.jpg" },
-            { name: "Basic Green", url: "https://filamentcolors.xyz/media/2023-09-08--08-27-56-front_RsLLfaH.jpg" },
-            { name: "Basic Black", url: "https://filamentcolors.xyz/media/2023-08-02--10-17-47-front_y6SQ11v.jpg" },
-            { name: "Basic White", url: "https://filamentcolors.xyz/media/bambu-lab-matte-ivory-white-pla-3916-front_CWyGkRH.jpg" },
-            { name: "Silk Gold", url: "https://filamentcolors.xyz/media/2023-08-02--10-32-22-front_f2hmDVP.jpg" },
-            { name: "Silk Silver", url: "https://filamentcolors.xyz/media/2023-08-02--10-33-57-front_pYltQYO.jpg" },
-            { name: "Blue", url: "https://filamentcolors.xyz/media/2024-07-23--14-45-27-front_zHWL8nN.jpg" }
+            { name: "Basic Purple" }, { name: "Basic Pink" }, { name: "Basic Green" }, 
+            { name: "Basic Black" }, { name: "Basic White" }, { name: "Silk Gold" }, 
+            { name: "Silk Silver" }, { name: "Blue" }
         ];
 
-        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v13') || "";
-        updateZSUTotalDisplay();
-        renderColors();
-        renderHistory();
+        // ЗАВАНТАЖЕННЯ ДАНИХ
+        window.onload = function() {
+            document.getElementById('mono_card').value = localStorage.getItem('dry_card_save') || "";
+            updateZSUTotalDisplay();
+            renderColors();
+            renderHistory();
+        };
 
-        function saveMono() { localStorage.setItem('dry_mono_v13', document.getElementById('mono_card').value); }
+        function saveMono() { localStorage.setItem('dry_card_save', document.getElementById('mono_card').value); }
 
         function updatePostInput() {
             let val = document.getElementById('post_select').value;
@@ -262,11 +259,9 @@
             document.getElementById('mLabel').innerText = m + "%";
             document.getElementById('bLabel').innerText = b + "%";
             
-            // Базова собівартість одного виробу
             let costPerOne = (w * (plast/1000)) + ((pwr/1000) * t * 4.5) + (t * 4); 
             let printTotal = (costPerOne * (1 + b/100) * (1 + m/100)) * qty;
 
-            // Знижка 10% на друк від 10 штук
             if (qty >= 10) {
                 printTotal = printTotal * 0.9;
                 document.getElementById('discount_info').style.display = 'block';
@@ -276,7 +271,6 @@
 
             let modelingPrice = modHours * 50;
             let total = printTotal + modelingPrice + postPrice + pack + zsu;
-
             if (urgent) total = total * 1.15;
 
             document.getElementById('res').innerText = Math.round(total) + " ₴";
@@ -297,8 +291,8 @@
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
                 if(zsu > 0) {
-                    let current = parseInt(localStorage.getItem('dry_zsu_total_v13') || 0);
-                    localStorage.setItem('dry_zsu_total_v13', current + zsu);
+                    let current = parseInt(localStorage.getItem('dry_zsu_total') || 0);
+                    localStorage.setItem('dry_zsu_total', current + zsu);
                     updateZSUTotalDisplay();
                 }
                 saveHistory();
@@ -307,29 +301,28 @@
 
         function resetZSU() {
             if(confirm("Обнулити загальну суму донатів?")) {
-                localStorage.setItem('dry_zsu_total_v13', 0);
+                localStorage.setItem('dry_zsu_total', 0);
                 updateZSUTotalDisplay();
             }
         }
 
         function updateZSUTotalDisplay() {
-            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total_v13') || 0) + " ₴";
+            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total') || 0) + " ₴";
         }
 
         function saveHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v13') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
             let data = {
                 name: document.getElementById('p1_name').value + " (x" + document.getElementById('qty').value + ")",
-                price: document.getElementById('res').innerText,
-                date: new Date().toLocaleTimeString()
+                price: document.getElementById('res').innerText
             };
             h.unshift(data); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v13', JSON.stringify(h));
+            localStorage.setItem('dry_history_list', JSON.stringify(h));
             renderHistory();
         }
 
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v13') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
             document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + 
                 h.map((x) => `<div class="history-item"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
         }
