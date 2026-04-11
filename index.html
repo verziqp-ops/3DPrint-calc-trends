@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v14</title>
+    <title>Dryguny Hub v15</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -212,7 +212,6 @@
             { name: "Silk Silver" }, { name: "Blue" }
         ];
 
-        // ЗАВАНТАЖЕННЯ ДАНИХ
         window.onload = function() {
             document.getElementById('mono_card').value = localStorage.getItem('dry_card_save') || "";
             updateZSUTotalDisplay();
@@ -299,6 +298,57 @@
             });
         }
 
+        function saveHistory() {
+            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
+            let data = {
+                name: document.getElementById('p1_name').value,
+                qty: document.getElementById('qty').value,
+                plast: document.getElementById('plast_price').value,
+                w: document.getElementById('w').value,
+                t: document.getElementById('t').value,
+                m: document.getElementById('m').value,
+                b: document.getElementById('b').value,
+                mod: document.getElementById('mod_hours').value,
+                postS: document.getElementById('post_select').value,
+                postC: document.getElementById('post_custom').value,
+                pack: document.getElementById('pack_check').checked,
+                urg: document.getElementById('urgent_check').checked,
+                zsu: document.getElementById('zsu_amount').value,
+                print: document.getElementById('printer').value,
+                price: document.getElementById('res').innerText
+            };
+            h.unshift(data); if(h.length > 5) h.pop();
+            localStorage.setItem('dry_history_list', JSON.stringify(h));
+            renderHistory();
+        }
+
+        function restore(i) {
+            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
+            let d = h[i];
+            document.getElementById('p1_name').value = d.name || "";
+            document.getElementById('qty').value = d.qty || 1;
+            document.getElementById('plast_price').value = d.plast || 850;
+            document.getElementById('w').value = d.w || 0;
+            document.getElementById('t').value = d.t || 0;
+            document.getElementById('m').value = d.m || 100;
+            document.getElementById('b').value = d.b || 5;
+            document.getElementById('mod_hours').value = d.mod || 0;
+            document.getElementById('post_select').value = d.postS || "0";
+            document.getElementById('post_custom').value = d.postC || 0;
+            document.getElementById('pack_check').checked = d.pack || false;
+            document.getElementById('urgent_check').checked = d.urg || false;
+            document.getElementById('zsu_amount').value = d.zsu || "0";
+            document.getElementById('printer').value = d.print || "150";
+            updatePostInput(); // оновить видимість кастомного поля та перерахує ціну
+            tg.showAlert("Дані замовлення відновлено!");
+        }
+
+        function renderHistory() {
+            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
+            document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + 
+                h.map((x, i) => `<div class="history-item" onclick="restore(${i})"><span>${x.name || 'Без назви'} (x${x.qty})</span><b>${x.price}</b></div>`).join('');
+        }
+
         function resetZSU() {
             if(confirm("Обнулити загальну суму донатів?")) {
                 localStorage.setItem('dry_zsu_total', 0);
@@ -308,23 +358,6 @@
 
         function updateZSUTotalDisplay() {
             document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total') || 0) + " ₴";
-        }
-
-        function saveHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
-            let data = {
-                name: document.getElementById('p1_name').value + " (x" + document.getElementById('qty').value + ")",
-                price: document.getElementById('res').innerText
-            };
-            h.unshift(data); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_history_list', JSON.stringify(h));
-            renderHistory();
-        }
-
-        function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
-            document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + 
-                h.map((x) => `<div class="history-item"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
         }
 
         function openTab(id, btn) {
