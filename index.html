@@ -36,9 +36,11 @@
         input, select { 
             width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
             background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
-            appearance: none; /* Для гарного вигляду select */
+            appearance: none;
         }
         input:focus, select:focus { border-color: var(--purp); }
+
+        .profile-name-input { padding: 8px; font-size: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px dashed #555; }
 
         .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
         .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
@@ -49,6 +51,11 @@
             font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px;
         }
 
+        .secondary-btn {
+            background: rgba(255,255,255,0.05); color: white; border: 1px solid #444;
+            padding: 10px; border-radius: 12px; width: 48%; font-size: 11px; cursor: pointer;
+        }
+
         .trend-item { 
             background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
             margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
@@ -56,6 +63,8 @@
         }
         .trend-item b { color: var(--purp); display: block; font-size: 16px; }
         .trend-item span { font-size: 12px; color: #777; }
+        
+        .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -68,6 +77,20 @@
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
+        <label>⚙️ Профіль 1</label>
+        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва (напр. PLA Sunlu)">
+        <div class="flex-row">
+            <button class="secondary-btn" onclick="saveProfile(1)">Зберегти П1</button>
+            <button class="secondary-btn" onclick="loadProfile(1)">Завантажити П1</button>
+        </div>
+
+        <label>⚙️ Профіль 2</label>
+        <input type="text" id="p2_name" class="profile-name-input" placeholder="Назва (напр. PETG JamgHe)">
+        <div class="flex-row">
+            <button class="secondary-btn" onclick="saveProfile(2)">Зберегти П2</button>
+            <button class="secondary-btn" onclick="loadProfile(2)">Завантажити П2</button>
+        </div>
+
         <label>🖨️ Оберіть принтер</label>
         <select id="printer" onchange="calc()">
             <option value="150">Bambu Lab A1 (150W)</option>
@@ -78,6 +101,9 @@
 
         <label>💰 Ціна пластику (грн/кг)</label>
         <input type="number" id="p" value="800" oninput="calc()">
+
+        <label>📦 Пакування (грн)</label>
+        <input type="number" id="pack" value="0" oninput="calc()" placeholder="Вартість коробки...">
         
         <label>⚖️ Вага деталі (грами)</label>
         <input type="number" id="w" placeholder="Введіть вагу..." oninput="calc()">
@@ -113,6 +139,17 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Завантажуємо назви профілів при старті
+        window.onload = function() {
+            for(let i=1; i<=2; i++) {
+                const saved = localStorage.getItem('dryguny_profile_' + i);
+                if(saved) {
+                    const data = JSON.parse(saved);
+                    if(data.name) document.getElementById('p' + i + '_name').value = data.name;
+                }
+            }
+        };
+
         function openTab(tabId, btn) {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -121,38 +158,62 @@
         }
 
         function calc() {
-            let printerPower = document.getElementById('printer').value; // Потужність у Ватах
+            let printerPower = document.getElementById('printer').value;
             let plastic = document.getElementById('p').value || 0;
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
-            let tariff = 4.32; // Тариф грн/кВт
+            let packaging = parseFloat(document.getElementById('pack').value) || 0;
+            let tariff = 4.32; 
             
             document.getElementById('mLabel').innerText = markup + "%";
             
-            // Розрахунок світла: (Потужність/1000) * години * тариф
             let electricity = (printerPower / 1000) * time * tariff;
-            
-            // Розрахунок бази: Пластик + Світло + Амортизація (додав 5 грн/год на запчастини)
-            let base = (weight * (plastic / 1000)) + electricity + (time * 5); 
-            
+            let base = (weight * (plastic / 1000)) + electricity + (time * 5) + packaging; 
             let final = base * (1 + markup / 100);
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
         }
 
+        function saveProfile(id) {
+            const profile = {
+                name: document.getElementById('p' + id + '_name').value,
+                p: document.getElementById('p').value,
+                m: document.getElementById('m').value,
+                pack: document.getElementById('pack').value,
+                printer: document.getElementById('printer').value
+            };
+            localStorage.setItem('dryguny_profile_' + id, JSON.stringify(profile));
+            tg.showAlert("Профіль " + (profile.name || id) + " збережено!");
+        }
+
+        function loadProfile(id) {
+            const saved = localStorage.getItem('dryguny_profile_' + id);
+            if (saved) {
+                const profile = JSON.parse(saved);
+                document.getElementById('p').value = profile.p;
+                document.getElementById('m').value = profile.m;
+                document.getElementById('pack').value = profile.pack;
+                document.getElementById('printer').value = profile.printer;
+                if(profile.name) document.getElementById('p' + id + '_name').value = profile.name;
+                calc();
+                tg.showAlert("Профіль завантажено!");
+            } else {
+                tg.showAlert("Профіль не знайдено.");
+            }
+        }
+
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
+            let pack = document.getElementById('pack').value || 0;
             let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n📦 Пакування: ${pack}₴\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
-            tg.showAlert("Чек скопійовано! Вставляй клієнту.");
+            tg.showAlert("Чек скопійовано!");
         }
     </script>
 </body>
 </html>
-
-
