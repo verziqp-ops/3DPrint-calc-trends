@@ -72,13 +72,13 @@
         }
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
 
-        /* Стилі історії */
         .history-list { margin-top: 15px; }
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 3px solid var(--purp);
+            border-left: 3px solid var(--purp); cursor: pointer; transition: 0.2s;
         }
+        .history-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
         .history-item span { font-size: 14px; }
         .history-item b { color: var(--cyan); }
     </style>
@@ -93,8 +93,8 @@
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
-        <label>⚙️ Профіль 1</label>
-        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва">
+        <label>⚙️ Назва замовлення / Профіль</label>
+        <input type="text" id="p1_name" class="profile-name-input" placeholder="Наприклад: Дракон">
         <div class="flex-row">
             <button class="secondary-btn" onclick="saveProfile(1)">Зберегти П1</button>
             <button class="secondary-btn" onclick="loadProfile(1)">Завантажити П1</button>
@@ -134,10 +134,10 @@
         </label>
         <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
         
-        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА В ІСТОРІЮ</button>
 
-        <div id="history-container">
-            <label>📜 Останні розрахунки</label>
+        <div id="history-container" style="margin-top: 20px;">
+            <label>📜 Історія (тисни, щоб відновити)</label>
             <div id="history-list" class="history-list"></div>
         </div>
     </div>
@@ -151,7 +151,6 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Завантаження історії при старті
         renderHistory();
 
         function calc() {
@@ -160,7 +159,7 @@
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
-            let scrap = document.getElementById('b').value; // Брак
+            let scrap = document.getElementById('b').value;
             let packPrice = document.getElementById('pack_check').checked ? 40 : 0;
             
             document.getElementById('mLabel').innerText = markup + "%";
@@ -168,10 +167,7 @@
             
             let electricity = (printerPower / 1000) * time * 4.32;
             let netCost = (weight * (plastic / 1000)) + electricity + (time * 5); 
-            
-            // Додаємо брак до собівартості
             let costWithScrap = netCost * (1 + scrap / 100);
-            
             let final = (costWithScrap * (1 + markup / 100)) + packPrice;
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
@@ -182,7 +178,8 @@
                 name: document.getElementById('p1_name').value,
                 p: document.getElementById('p').value,
                 m: document.getElementById('m').value,
-                printer: document.getElementById('printer').value
+                printer: document.getElementById('printer').value,
+                b: document.getElementById('b').value
             };
             localStorage.setItem('dryguny_profile_' + id, JSON.stringify(profile));
             tg.showAlert("Профіль збережено!");
@@ -195,9 +192,10 @@
                 document.getElementById('p').value = profile.p;
                 document.getElementById('m').value = profile.m;
                 document.getElementById('printer').value = profile.printer;
+                document.getElementById('b').value = profile.b || 5;
                 document.getElementById('p1_name').value = profile.name || "";
                 calc();
-                tg.showAlert("Завантажено!");
+                tg.showAlert("Профіль завантажено!");
             }
         }
 
@@ -211,33 +209,68 @@
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
+            let time = document.getElementById('t').value;
             let isPacked = document.getElementById('pack_check').checked;
             let pName = document.getElementById('p1_name').value || "Без назви";
             
-            if(!weight) return tg.showAlert("Введи вагу деталі!");
+            if(!weight || !time) return tg.showAlert("Введи вагу та час друку!");
             
             let packText = isPacked ? "\n📦Тип пакування: крафт" : "";
             let text = `🚀Рахунок:${packText}\n💰Сума до сплати: ${res}\n\n🛠Дякуємо за ваше замовлення!`;
             
             navigator.clipboard.writeText(text).then(() => {
+                tg.HapticFeedback.notificationOccurred('success');
                 tg.showAlert("Чек скопійовано! 🚀");
-                addToHistory(pName, res);
+                
+                // Зберігаємо ВСІ дані для відновлення
+                let currentData = {
+                    name: pName,
+                    price: res,
+                    weight: weight,
+                    time: time,
+                    plasticPrice: document.getElementById('p').value,
+                    printer: document.getElementById('printer').value,
+                    markup: document.getElementById('m').value,
+                    scrap: document.getElementById('b').value,
+                    isPacked: isPacked,
+                    date: new Date().toLocaleTimeString()
+                };
+                addToHistory(currentData);
             });
         }
 
-        function addToHistory(name, price) {
+        function addToHistory(data) {
             let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
-            history.unshift({ name, price, date: new Date().toLocaleTimeString() });
-            if(history.length > 5) history.pop(); // Тільки останні 5
+            history.unshift(data);
+            if(history.length > 5) history.pop();
             localStorage.setItem('dryguny_history', JSON.stringify(history));
             renderHistory();
+        }
+
+        function restoreFromHistory(index) {
+            let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
+            let data = history[index];
+            if(!data) return;
+
+            document.getElementById('p1_name').value = data.name;
+            document.getElementById('w').value = data.weight;
+            document.getElementById('t').value = data.time;
+            document.getElementById('p').value = data.plasticPrice;
+            document.getElementById('printer').value = data.printer;
+            document.getElementById('m').value = data.markup;
+            document.getElementById('b').value = data.scrap || 5;
+            document.getElementById('pack_check').checked = data.isPacked;
+
+            calc();
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.showAlert("Дані відновлено: " + data.name);
         }
 
         function renderHistory() {
             let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
             let list = document.getElementById('history-list');
-            list.innerHTML = history.map(item => `
-                <div class="history-item">
+            list.innerHTML = history.map((item, index) => `
+                <div class="history-item" onclick="restoreFromHistory(${index})">
                     <span>${item.name} <small>(${item.date})</small></span>
                     <b>${item.price}</b>
                 </div>
