@@ -97,9 +97,9 @@
 
         <label>🚚 Доставка</label>
         <select id="shipping">
-            <option value="Нова Пошта">Нова Пошта</option>
-            <option value="Укрпошта">Укрпошта</option>
-            <option value="Самовивіз (Тернопіль)">Самовивіз (Тернопіль)</option>
+            <option value="Нова Пошта">📦 Нова Пошта</option>
+            <option value="Укрпошта">📦 Укрпошта</option>
+            <option value="Самовивіз (Тернопіль)">🏙️ Самовивіз (Тернопіль)</option>
         </select>
 
         <label>🖨️ Принтер</label>
@@ -143,8 +143,6 @@
 
         <div class="zsu-stats">
             🇺🇦 Всього зібрано на ЗСУ: <b id="total_zsu_display">0</b> ₴
-            <br>
-            <span style="font-size: 10px; color: #888; cursor: pointer; text-decoration: underline;" onclick="resetZSU()">Оновити збір</span>
         </div>
 
         <div id="history-container" style="margin-top: 25px;">
@@ -155,7 +153,7 @@
 
     <div id="colors" class="card">
         <h3 style="margin-top:0">🎨 Наявність кольорів</h3>
-        <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">Впиши посилання. Вони зберігаються автоматично.</p>
+        <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">Введіть посилання на фото (зберігаються автоматично).</p>
         <div id="color-list-container"></div>
     </div>
 
@@ -185,24 +183,16 @@
         renderHistory();
 
         function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
-
-        function saveColorUrl(idx, url) { localStorage.setItem('dry_col_' + idx, url); }
+        function saveUrl(i, val) { localStorage.setItem('dry_url_' + i, val); }
 
         function updateZSUDisplay() {
             let total = localStorage.getItem('total_zsu_donated') || 0;
             document.getElementById('total_zsu_display').innerText = total;
         }
 
-        function resetZSU() {
-            if(confirm("Скинути статистику донатів?")) {
-                localStorage.setItem('total_zsu_donated', 0);
-                updateZSUDisplay();
-            }
-        }
-
         function renderColors() {
             let html = bambuColors.map((c, i) => {
-                let savedUrl = localStorage.getItem('dry_col_' + i) || "";
+                let saved = localStorage.getItem('dry_url_' + i) || "";
                 return `
                 <div class="color-item">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
@@ -212,9 +202,8 @@
                         </div>
                         <input type="checkbox" class="color-check" data-name="${c.name}" data-index="${i}">
                     </div>
-                    <input type="text" class="col-link" id="link-${i}" placeholder="Посилання на фото" value="${savedUrl}" oninput="saveColorUrl(${i}, this.value)" style="font-size:11px; padding:8px; border-radius:8px;">
-                </div>
-                `;
+                    <input type="text" placeholder="Посилання на фото" value="${saved}" oninput="saveUrl(${i}, this.value)" style="font-size:11px; padding:8px; border-radius:8px;">
+                </div>`;
             }).join('');
             document.getElementById('color-list-container').innerHTML = html;
         }
@@ -242,27 +231,25 @@
             let res = document.getElementById('res').innerText;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
-            let name = document.getElementById('p1_name').value || "Виріб";
+            let name = document.getElementById('p1_name').value || "Деталь";
             let ship = document.getElementById('shipping').value;
             let time = document.getElementById('deadline').value;
-            let isPacked = document.getElementById('pack_check').checked ? "Так" : "Ні";
+            let pack = document.getElementById('pack_check').checked ? "Так (40 ₴)" : "Ні";
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
-            let selectedColors = [];
+            let sel = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
-                let idx = el.getAttribute('data-index');
-                let colorName = el.getAttribute('data-name');
-                let colorUrl = document.getElementById('link-' + idx).value;
-                selectedColors.push("• " + colorName + (colorUrl ? ": " + colorUrl : ""));
+                let i = el.getAttribute('data-index');
+                let url = localStorage.getItem('dry_url_' + i);
+                sel.push("• " + el.getAttribute('data-name') + (url ? ": " + url : ""));
             });
-            let colorText = selectedColors.length > 0 ? `\n🎨 Колір:\n${selectedColors.join('\n')}` : "";
+            let colText = sel.length > 0 ? `\n🎨 Колір:\n${sel.join('\n')}` : "";
 
-            let currentTotal = parseInt(localStorage.getItem('total_zsu_donated') || 0);
-            let newTotal = currentTotal + zsu;
-            if (zsu > 0) { localStorage.setItem('total_zsu_donated', newTotal); updateZSUDisplay(); }
+            let totalZsu = parseInt(localStorage.getItem('total_zsu_donated') || 0) + zsu;
+            if(zsu > 0) { localStorage.setItem('total_zsu_donated', totalZsu); updateZSUDisplay(); }
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colorText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n📦 Пакування: ${isPacked}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${newTotal} ₴\n\n🛠 Дякуємо за замовлення!`;
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n📦 Пакування: ${pack}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${totalZsu} ₴\n\n🛠 Дякуємо за замовлення!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
@@ -275,14 +262,10 @@
             let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
             h.unshift({
                 name, price,
-                w: document.getElementById('w').value,
-                t: document.getElementById('t').value,
-                p: document.getElementById('p').value,
-                m: document.getElementById('m').value,
-                b: document.getElementById('b').value,
-                pr: document.getElementById('printer').value,
-                pk: document.getElementById('pack_check').checked,
-                zs: document.getElementById('zsu_amount').value,
+                w: document.getElementById('w').value, t: document.getElementById('t').value,
+                p: document.getElementById('p').value, m: document.getElementById('m').value,
+                b: document.getElementById('b').value, pr: document.getElementById('printer').value,
+                pk: document.getElementById('pack_check').checked, zs: document.getElementById('zsu_amount').value,
                 date: new Date().toLocaleTimeString()
             });
             if(h.length > 5) h.pop();
@@ -291,9 +274,7 @@
         }
 
         function restore(i) {
-            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
-            let d = h[i];
-            if(!d) return;
+            let d = JSON.parse(localStorage.getItem('dry_v5'))[i];
             document.getElementById('p1_name').value = d.name;
             document.getElementById('w').value = d.w;
             document.getElementById('t').value = d.t;
@@ -313,8 +294,7 @@
                 <div class="history-item" onclick="restore(${i})">
                     <span>${x.name} <small>(${x.date})</small></span>
                     <b>${x.price}</b>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         function openTab(id, btn) {
