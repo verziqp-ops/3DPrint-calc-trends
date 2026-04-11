@@ -64,6 +64,12 @@
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
         
         input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--cyan); cursor: pointer; }
+
+        .zsu-stats {
+            margin-top: 15px; padding: 12px; border-radius: 15px;
+            background: rgba(3, 218, 198, 0.1); border: 1px dashed var(--cyan);
+            text-align: center; font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +127,12 @@
         
         <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
+        <div class="zsu-stats">
+            🇺🇦 Всього зібрано на ЗСУ: <b id="total_zsu_display">0</b> ₴
+            <br>
+            <span style="font-size: 10px; color: #888; cursor: pointer; text-decoration: underline;" onclick="resetZSU()">Оновити (скинути)</span>
+        </div>
+
         <div id="history-container" style="margin-top: 25px;">
             <label>📜 Останні 5 розрахунків</label>
             <div id="history-list"></div>
@@ -130,9 +142,7 @@
     <div id="colors" class="card">
         <h3 style="margin-top:0">🎨 Наявність кольорів</h3>
         <button class="main-btn" style="margin-bottom: 15px; background: var(--cyan); color: #000;" onclick="copySelectedColors()">📋 СКОПІЮВАТИ ОБРАНІ</button>
-        
-        <div id="color-list-container">
-            </div>
+        <div id="color-list-container"></div>
     </div>
 
     <script>
@@ -155,11 +165,26 @@
             { name: "Rainbow (Silk)", hex: "linear-gradient(45deg, red, blue, green)" }
         ];
 
+        // Ініціалізація даних
         document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
+        updateZSUDisplay();
         renderColors();
         renderHistory();
 
         function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
+
+        function updateZSUDisplay() {
+            let total = localStorage.getItem('total_zsu_donated') || 0;
+            document.getElementById('total_zsu_display').innerText = total;
+        }
+
+        function resetZSU() {
+            if(confirm("Ти впевнений, що хочеш скинути суму донатів до 0?")) {
+                localStorage.setItem('total_zsu_donated', 0);
+                updateZSUDisplay();
+                tg.showAlert("Статистику донатів оновлено!");
+            }
+        }
 
         function renderColors() {
             let html = bambuColors.map((c, i) => `
@@ -179,9 +204,7 @@
             document.querySelectorAll('.color-check:checked').forEach(el => {
                 selected.push("• " + el.getAttribute('data-name'));
             });
-            
             if(selected.length === 0) return tg.showAlert("Вибери хоча б один колір!");
-            
             let text = "🎨 Наявні кольори для замовлення:\n\n" + selected.join('\n');
             navigator.clipboard.writeText(text).then(() => tg.showAlert("Список обраних кольорів скопійовано!"));
         }
@@ -215,11 +238,18 @@
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
+            // Додаємо донат до загальної статистики
+            if (zsu > 0) {
+                let currentTotal = parseInt(localStorage.getItem('total_zsu_donated') || 0);
+                localStorage.setItem('total_zsu_donated', currentTotal + zsu);
+                updateZSUDisplay();
+            }
+
             let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}\n📦 Пакування: ${pack}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💰 Сума: ${res}${card ? '\n💳 Карта: ' + card : ''}\n\n🛠 Дякуємо за замовлення!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("Чек скопійовано!");
+                tg.showAlert("Чек скопійовано! Донат додано до статистики.");
                 saveHistory(name, res);
             });
         }
