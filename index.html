@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub</title>
+    <title>Dryguny Hub Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -24,116 +24,138 @@
         .card {
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 25px;
-            padding: 20px; width: 100%; max-width: 360px; box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none;
+            padding: 20px; width: 100%; max-width: 400px; box-sizing: border-box; display: none;
         }
         .card.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; text-shadow: 0 0 20px rgba(3,218,198,0.3); }
+        .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; }
         
-        label { display: block; margin: 15px 0 5px 5px; font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        label { display: block; margin: 12px 0 5px 5px; font-size: 11px; color: #aaa; text-transform: uppercase; }
         input, select { 
-            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
-            background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 5px;
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #333; 
+            background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
         }
+
+        /* СТИЛЬ ТУМБЛЕРА */
+        .switch {
+            position: relative; display: inline-block; width: 44px; height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--purp); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .row { display: flex; gap: 10px; margin-bottom: 5px; align-items: center; }
+        .row > div { flex: 1; }
 
         .switch-box {
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin: 8px 0;
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin: 10px 0;
             border: 1px solid rgba(255,255,255,0.1);
         }
         
         .main-btn { 
             background: linear-gradient(135deg, #6200ee, #9d50bb); color: white; 
-            border: none; padding: 18px; border-radius: 18px; width: 100%; 
-            font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px;
+            border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 15px;
         }
+
         .secondary-btn {
-            background: rgba(255,255,255,0.1); color: white; border: 1px solid #444;
-            padding: 12px; border-radius: 12px; width: 100%; margin-bottom: 15px; cursor: pointer;
+            background: rgba(255,255,255,0.05); color: var(--cyan); border: 1px solid var(--cyan);
+            padding: 12px; border-radius: 12px; width: 100%; margin-bottom: 15px; cursor: pointer; font-weight: bold;
         }
 
         .color-item { 
-            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 15px; margin-bottom: 10px;
+            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 15px; margin-bottom: 8px;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .color-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #555; margin-right: 10px; }
-        
-        .history-item { 
-            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
-            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid var(--purp); cursor: pointer; transition: 0.2s;
-        }
-        .history-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
-        .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
-        input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--cyan); cursor: pointer; }
 
-        .google-link { color: var(--cyan); text-decoration: none; font-size: 12px; margin-left: 10px; }
+        .history-item { 
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--purp); cursor: pointer;
+        }
+
+        .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
+        .google-link { color: var(--cyan); text-decoration: none; font-size: 12px; margin-left: 8px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab('calc', this)">💎 Чек</button>
-        <button class="tab-btn" onclick="openTab('colors', this)">🎨 Кольори</button>
+        <button class="tab-btn active" onclick="openTab('calc', this)">💎 Розрахунок</button>
+        <button class="tab-btn" onclick="openTab('colors', this)">🎨 Наявність</button>
     </div>
 
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
-        <label>💳 Карта Monobank</label>
-        <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
+        <label>⚙️ Модель</label>
+        <input type="text" id="p1_name" placeholder="Назва моделі">
 
-        <label>⚙️ Назва замовлення</label>
-        <input type="text" id="p1_name" placeholder="Наприклад: Дракон">
+        <div class="row">
+            <div>
+                <label>⚖️ Вага (г)</label>
+                <input type="number" id="w" placeholder="0" oninput="calc()">
+            </div>
+            <div>
+                <label>⏱️ Час (год)</label>
+                <input type="number" id="t" placeholder="0" oninput="calc()">
+            </div>
+        </div>
 
-        <label>🚚 Доставка</label>
-        <select id="shipping">
-            <option value="Нова Пошта">📦 Нова Пошта</option>
-            <option value="Укрпошта">📦 Укрпошта</option>
-            <option value="Самовивіз (Тернопіль)">🏙️ Самовивіз (Тернопіль)</option>
-        </select>
-
-        <label>🖨️ Принтер</label>
-        <select id="printer" onchange="calc()">
-            <option value="150">Bambu Lab A1 (150W)</option>
-            <option value="80">Bambu Lab A1 Mini (80W)</option>
-            <option value="350">Bambu Lab P1S/P (350W)</option>
-        </select>
-
-        <label>⚖️ Вага (г)</label>
-        <input type="number" id="w" placeholder="0" oninput="calc()">
-        
-        <label>⏱️ Час (год)</label>
-        <input type="number" id="t" placeholder="0" oninput="calc()">
+        <label>📈 Параметри прибутку</label>
+        <div class="row">
+            <div>
+                <label>Націнка: <b id="mLabel">100%</b></label>
+                <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>Брак: <b id="bLabel">5%</b></label>
+                <input type="range" id="b" min="0" max="30" value="5" class="slider-range" oninput="calc()">
+            </div>
+        </div>
 
         <div class="switch-box">
             <span>📦 Пакування (40 ₴)</span>
-            <input type="checkbox" id="pack_check" onchange="calc()">
+            <label class="switch">
+                <input type="checkbox" id="pack_check" onchange="calc()">
+                <span class="slider"></span>
+            </label>
         </div>
 
-        <div class="switch-box" style="border-color: var(--cyan);">
-            <span style="color: var(--cyan);">🇺🇦 Донат на ЗСУ</span>
-            <select id="zsu_amount" style="width: 80px; margin: 0; padding: 5px; font-size: 12px;" onchange="calc()">
-                <option value="0">0 ₴</option>
-                <option value="20">20 ₴</option>
-                <option value="50">50 ₴</option>
-                <option value="100">100 ₴</option>
+        <label>🚚 Деталі</label>
+        <div class="row">
+            <select id="printer" onchange="calc()">
+                <option value="150">Bambu A1</option>
+                <option value="80">A1 Mini</option>
+                <option value="350">P1S/X1</option>
+            </select>
+            <select id="shipping">
+                <option value="Нова Пошта">📦 НП</option>
+                <option value="Укрпошта">📦 УП</option>
+                <option value="Самовивіз">🏙️ Самовивіз</option>
             </select>
         </div>
 
-        <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+        <label>💳 Карта</label>
+        <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
 
-        <div id="history-container" style="margin-top: 25px;">
-            <label>📜 Історія (тисни для відновлення)</label>
-            <div id="history-list"></div>
-        </div>
+        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+
+        <div id="history-list" style="margin-top:25px"></div>
     </div>
 
     <div id="colors" class="card">
-        <h3 style="margin:0 0 15px 0">🎨 Кольори в наявності</h3>
-        <button class="secondary-btn" onclick="copyStock()">📋 СКОПІЮВАТИ СПИСОК НАЯВНОСТІ</button>
+        <button class="secondary-btn" onclick="copyStock()">📋 КОПІЮВАТИ СПИСОК НАЯВНОСТІ</button>
         <div id="color-list-container"></div>
     </div>
 
@@ -141,149 +163,114 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const bambuColors = [
-            { name: "Basic Purple", hex: "#6E3FA3" },
-            { name: "Basic Gold", hex: "#E4BD64" },
-            { name: "Basic Bronze", hex: "#84754E" },
-            { name: "Basic Green", hex: "#00AE42" },
-            { name: "Basic Yellow", hex: "#FCE300" },
-            { name: "Basic Red", hex: "#C00D1E" },
-            { name: "Black", hex: "#000000" },
-            { name: "Basic Jade White", hex: "#FFFFFF" },
-            { name: "Basic Magenta", hex: "#EC008C" },
-            { name: "Basic Cyan", hex: "#0086D6" },
-            { name: "Basic Silver", hex: "#A6A9AA" },
-            { name: "Basic Blue", hex: "#00358E" },
-            { name: "Silk Gold", hex: "#FFC600" },
-            { name: "Silk Silver", hex: "#97999B" },
-            { name: "Silk Copper", hex: "#5E4B3C" },
-            { name: "Silk Blue", hex: "#147BD1" },
-            { name: "CF Burgundy Red", hex: "#951E23" },
-            { name: "CF Jeans Blue", hex: "#6E88BC" },
-            { name: "CF Lava Gray", hex: "#4D5054" },
-            { name: "CF Matcha Green", hex: "#5C9748" }
+        // СЮДИ ВСТАВЛЯЙ СВОЇ ПОСИЛАННЯ
+        const drygunyColors = [
+            { name: "Basic Purple", url: "https://посилання-на-фото" },
+            { name: "Basic Gold", url: "https://посилання-на-фото" },
+            { name: "Basic Bronze", url: "https://посилання-на-фото" },
+            { name: "Basic Green", url: "https://посилання-на-фото" },
+            { name: "Basic Yellow", url: "" },
+            { name: "Basic Red", url: "" },
+            { name: "Black", url: "" },
+            { name: "Basic Jade White", url: "" },
+            { name: "Basic Magenta", url: "" },
+            { name: "Basic Cyan", url: "" },
+            { name: "Basic Silver", url: "" },
+            { name: "Basic Blue", url: "" },
+            { name: "Silk Gold", url: "" },
+            { name: "Silk Silver", url: "" },
+            { name: "Silk Copper", url: "" },
+            { name: "Silk Blue", url: "" },
+            { name: "CF Burgundy Red", url: "" },
+            { name: "CF Jeans Blue", url: "" },
+            { name: "CF Lava Gray", url: "" },
+            { name: "CF Matcha Green", url: "" }
         ];
 
-        document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
+        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v6') || "";
         renderColors();
         renderHistory();
 
-        function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
-        function saveUrl(i, val) { localStorage.setItem('dry_url_v3_' + i, val); }
+        function saveMono() { localStorage.setItem('dry_mono_v6', document.getElementById('mono_card').value); }
 
         function renderColors() {
-            let html = bambuColors.map((c, i) => {
-                let saved = localStorage.getItem('dry_url_v3_' + i) || "";
-                let googleSearch = `https://www.google.com/search?q=color+hex+${c.hex.replace('#','')}`;
+            let html = drygunyColors.map((c, i) => {
+                let google = `https://www.google.com/search?q=Bambu+Lab+${c.name.replace(' ','+')}+color`;
                 return `
                 <div class="color-item">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center;">
-                            <div class="color-dot" style="background: ${c.hex}"></div>
-                            <span style="font-size:13px">${c.name}</span>
-                            <a href="${googleSearch}" target="_blank" class="google-link">🔍</a>
+                            <span style="font-size:14px; font-weight:bold;">${c.name}</span>
+                            <a href="${google}" target="_blank" class="google-link">🔍</a>
                         </div>
-                        <input type="checkbox" class="color-check" data-name="${c.name}" data-hex="${c.hex}" data-index="${i}">
+                        <label class="switch">
+                            <input type="checkbox" class="color-check" data-name="${c.name}" data-url="${c.url}">
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <input type="text" placeholder="Посилання на фото" value="${saved}" oninput="saveUrl(${i}, this.value)" style="font-size:11px; padding:8px; border-radius:8px;">
+                    <div style="font-size:10px; color:#666; margin-top:5px; word-break:break-all;">${c.url || 'Фото не додано'}</div>
                 </div>`;
             }).join('');
             document.getElementById('color-list-container').innerHTML = html;
-        }
-
-        function copyStock() {
-            let selected = [];
-            document.querySelectorAll('.color-check:checked').forEach(el => {
-                let i = el.getAttribute('data-index');
-                let name = el.getAttribute('data-name');
-                let hex = el.getAttribute('data-hex');
-                let url = localStorage.getItem('dry_url_v3_' + i);
-                let google = `https://www.google.com/search?q=color+hex+${hex.replace('#','')}`;
-                selected.push(`✅ ${name} (${hex})\n🔗 Фото: ${url || 'немає'}\n🔍 Google: ${google}`);
-            });
-            
-            if(selected.length === 0) return tg.showAlert("Спершу вибери кольори галочками!");
-            
-            let msg = `🎨 КОЛЬОРИ В НАЯВНОСТІ Dryguny:\n\n${selected.join('\n\n')}`;
-            navigator.clipboard.writeText(msg).then(() => {
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("Список наявності скопійовано!");
-            });
         }
 
         function calc() {
             let pwr = document.getElementById('printer').value;
             let w = document.getElementById('w').value || 0;
             let t = document.getElementById('t').value || 0;
+            let m = document.getElementById('m').value;
+            let b = document.getElementById('b').value;
             let pack = document.getElementById('pack_check').checked ? 40 : 0;
-            let zsu = parseInt(document.getElementById('zsu_amount').value);
             
-            let el = (pwr / 1000) * t * 4.32;
-            let net = (w * 0.8) + el + (t * 5); 
-            let total = (net * 1.05 * 2) + pack + zsu; 
+            document.getElementById('mLabel').innerText = m + "%";
+            document.getElementById('bLabel').innerText = b + "%";
+            
+            let cost = (w * 0.85) + ((pwr/1000) * t * 4.5) + (t * 4); // Собівартість
+            let total = (cost * (1 + b/100) * (1 + m/100)) + pack;
             document.getElementById('res').innerText = Math.round(total) + " ₴";
+        }
+
+        function copyStock() {
+            let sel = [];
+            document.querySelectorAll('.color-check:checked').forEach(el => {
+                sel.push(`✅ ${el.getAttribute('data-name')}\n🔗 Фото: ${el.getAttribute('data-url') || 'за запитом'}`);
+            });
+            if(sel.length === 0) return tg.showAlert("Вибери кольори!");
+            navigator.clipboard.writeText(`🎨 Dryguny — Доступні кольори:\n\n${sel.join('\n\n')}`)
+                .then(() => tg.showAlert("Список наявності скопійовано!"));
         }
 
         function copyCheck() {
             let res = document.getElementById('res').innerText;
-            let card = document.getElementById('mono_card').value;
-            let name = document.getElementById('p1_name').value || "Деталь";
+            let name = document.getElementById('p1_name').value || "Модель";
             let ship = document.getElementById('shipping').value;
-            let zsu = document.getElementById('zsu_amount').value;
-            
-            // Збираємо дані для історії
-            let w = document.getElementById('w').value;
-            let t = document.getElementById('t').value;
-            let pr = document.getElementById('printer').value;
-            let pk = document.getElementById('pack_check').checked;
+            let card = document.getElementById('mono_card').value;
 
-            let sel = [];
+            let col = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
-                let i = el.getAttribute('data-index');
-                let url = localStorage.getItem('dry_url_v3_' + i);
-                sel.push(`• ${el.getAttribute('data-name')} (${el.getAttribute('data-hex')})${url ? '\n  🔗 ' + url : ''}`);
+                col.push(`• ${el.getAttribute('data-name')}`);
             });
-            let colText = sel.length > 0 ? `\n🎨 Колір:\n${sel.join('\n')}` : "";
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colText}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n🛠 Дякуємо за замовлення!`;
-            
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}\n💳 Карта: ${card}\n\n🛠 Дякуємо за замовлення!`;
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
-                saveHistory(name, res, w, t, pr, pk, zsu, ship);
+                saveHistory(name, res);
             });
         }
 
-        function saveHistory(name, price, w, t, pr, pk, zs, ship) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
-            h.unshift({ name, price, w, t, pr, pk, zs, ship, date: new Date().toLocaleTimeString() });
+        function saveHistory(name, price) {
+            let h = JSON.parse(localStorage.getItem('dry_h_v6') || '[]');
+            h.unshift({ name, price, date: new Date().toLocaleTimeString() });
             if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v4', JSON.stringify(h));
+            localStorage.setItem('dry_h_v6', JSON.stringify(h));
             renderHistory();
         }
 
-        function restore(index) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
-            let data = h[index];
-            if(!data) return;
-
-            document.getElementById('p1_name').value = data.name;
-            document.getElementById('w').value = data.w;
-            document.getElementById('t').value = data.t;
-            document.getElementById('printer').value = data.pr;
-            document.getElementById('pack_check').checked = data.pk;
-            document.getElementById('zsu_amount').value = data.zs;
-            document.getElementById('shipping').value = data.ship;
-
-            calc();
-            tg.HapticFeedback.impactOccurred('medium');
-            tg.showAlert("Дані відновлено!");
-        }
-
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
-            document.getElementById('history-list').innerHTML = h.map((x, i) => `
-                <div class="history-item" onclick="restore(${i})">
-                    <span>${x.name} <small>(${x.date})</small></span>
+            let h = JSON.parse(localStorage.getItem('dry_h_v6') || '[]');
+            document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + h.map(x => `
+                <div class="history-item">
+                    <span>${x.name}</span>
                     <b>${x.price}</b>
                 </div>`).join('');
         }
