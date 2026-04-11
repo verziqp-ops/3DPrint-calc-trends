@@ -25,11 +25,12 @@
             background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 25px;
             padding: 20px; width: 100%; max-width: 360px; box-sizing: border-box;
-            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none;
         }
-        .card.active { display: block; }
+        .card.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; }
+        .price-tag { font-size: 48px; font-weight: 900; color: var(--cyan); text-align: center; margin: 15px 0; text-shadow: 0 0 20px rgba(3,218,198,0.3); }
         
         label { display: block; margin: 15px 0 5px 5px; font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
         input, select { 
@@ -49,23 +50,26 @@
             font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px;
         }
 
+        .color-item { 
+            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 15px; margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .color-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #555; margin-right: 10px; }
+        
+        .history-item { 
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+            border-left: 4px solid var(--purp); cursor: pointer;
+        }
+        .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
+        
+        input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--cyan); cursor: pointer; }
+
         .zsu-stats {
             margin-top: 15px; padding: 12px; border-radius: 15px;
             background: rgba(3, 218, 198, 0.1); border: 1px dashed var(--cyan);
-            text-align: center; font-size: 14px;
+            text-align: center; font-size: 13px;
         }
-
-        .history-item { 
-            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; 
-            margin-bottom: 8px; display: flex; justify-content: space-between; border-left: 4px solid var(--purp);
-        }
-        
-        .color-item { 
-            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; 
-            margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .color-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #555; margin-right: 10px; }
-        .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
     </style>
 </head>
 <body>
@@ -78,9 +82,12 @@
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
-        <label>⚙️ Основна інформація</label>
-        <input type="text" id="p1_name" placeholder="Назва виробу (напр. Вовк)">
-        
+        <label>💳 Карта Monobank</label>
+        <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
+
+        <label>⚙️ Назва замовлення</label>
+        <input type="text" id="p1_name" placeholder="Наприклад: Дракон">
+
         <label>📅 Термін виготовлення</label>
         <select id="deadline">
             <option value="сьогодні-завтра">🚀 Терміново (сьогодні-завтра)</option>
@@ -88,46 +95,44 @@
             <option value="тиждень">📅 Черга (тиждень)</option>
         </select>
 
-        <label>🚚 Спосіб доставки</label>
+        <label>🚚 Доставка</label>
         <select id="shipping">
-            <option value="Нова Пошта">📦 Нова Пошта</option>
-            <option value="Укрпошта">🐌 Укрпошта</option>
-            <option value="Самовивіз (ТЕРНОПІЛЬ)">🏙️ Самовивіз (Тернопіль)</option>
+            <option value="Нова Пошта">Нова Пошта</option>
+            <option value="Укрпошта">Укрпошта</option>
+            <option value="Самовивіз (Тернопіль)">Самовивіз (Тернопіль)</option>
         </select>
 
-        <label>💳 Карта для оплати</label>
-        <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
-
-        <label>🖨️ Принтер та налаштування</label>
+        <label>🖨️ Принтер</label>
         <select id="printer" onchange="calc()">
             <option value="150">Bambu Lab A1 (150W)</option>
             <option value="80">Bambu Lab A1 Mini (80W)</option>
             <option value="350">Bambu Lab P1S/P (350W)</option>
         </select>
 
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;"><label>⚖️ Вага (г)</label><input type="number" id="w" placeholder="0" oninput="calc()"></div>
-            <div style="flex: 1;"><label>⏱️ Час (год)</label><input type="number" id="t" placeholder="0" oninput="calc()"></div>
-        </div>
-
         <label>💰 Пластик (грн/кг)</label>
         <input type="number" id="p" value="800" oninput="calc()">
 
         <div class="switch-box">
-            <span>📦 Пакування (40 ₴)</span>
-            <input type="checkbox" id="pack_check" onchange="calc()" style="width:20px; height:20px;">
+            <span>📦 Пакування</span>
+            <input type="checkbox" id="pack_check" onchange="calc()">
         </div>
 
         <div class="switch-box" style="border-color: var(--cyan);">
             <span style="color: var(--cyan);">🇺🇦 Донат на ЗСУ</span>
-            <select id="zsu_amount" style="width: 85px; margin: 0; padding: 5px;" onchange="calc()">
+            <select id="zsu_amount" style="width: 80px; margin: 0; padding: 5px; font-size: 12px;" onchange="calc()">
                 <option value="0">0 ₴</option>
                 <option value="20">20 ₴</option>
                 <option value="50">50 ₴</option>
                 <option value="100">100 ₴</option>
             </select>
         </div>
-
+        
+        <label>⚖️ Вага (г)</label>
+        <input type="number" id="w" placeholder="0" oninput="calc()">
+        
+        <label>⏱️ Час (год)</label>
+        <input type="number" id="t" placeholder="0" oninput="calc()">
+        
         <label>⚠️ Брак: <b id="bLabel" style="color:var(--cyan)">5%</b></label>
         <input type="range" id="b" min="0" max="20" value="5" class="slider-range" oninput="calc()">
 
@@ -137,20 +142,20 @@
         <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
         <div class="zsu-stats">
-            🇺🇦 Всього зібрано на ЗСУ: <b id="total_zsu_display">0</b> ₴
+            🇺🇦 Всього зібрано на ЗСУ через додаток: <b id="total_zsu_display">0</b> ₴
             <br>
             <span style="font-size: 10px; color: #888; cursor: pointer; text-decoration: underline;" onclick="resetZSU()">Оновити збір</span>
         </div>
 
-        <div id="history-container" style="margin-top: 20px;">
-            <label>📜 Історія (5)</label>
+        <div id="history-container" style="margin-top: 25px;">
+            <label>📜 Останні 5 розрахунків</label>
             <div id="history-list"></div>
         </div>
     </div>
 
     <div id="colors" class="card">
-        <h3 style="margin-top:0">🎨 Налаштування кольорів</h3>
-        <p style="font-size: 11px; color: #aaa; margin-bottom: 15px;">Обери колір та додай пряме посилання.</p>
+        <h3 style="margin-top:0">🎨 Наявність кольорів</h3>
+        <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">Впиши посилання на фото кольору, якщо воно є.</p>
         <div id="color-list-container"></div>
     </div>
 
@@ -158,12 +163,19 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const colorData = [
-            { name: "Black Matte", hex: "#1a1a1a", url: "" },
-            { name: "White Basic", hex: "#ffffff", url: "" },
-            { name: "Silk Gold", hex: "#ffd700", url: "" },
-            { name: "Cyan Basic", hex: "#00ffff", url: "" },
-            { name: "Neon Green", hex: "#39ff14", url: "" }
+        const bambuColors = [
+            { name: "Black (Basic)", hex: "#000000", url: "" },
+            { name: "White (Basic)", hex: "#FFFFFF", url: "" },
+            { name: "Red (Basic)", hex: "#EE2737", url: "" },
+            { name: "Blue (Basic)", hex: "#005EB8", url: "" },
+            { name: "Green (Basic)", hex: "#009639", url: "" },
+            { name: "Orange (Basic)", hex: "#FF671F", url: "" },
+            { name: "Yellow (Basic)", hex: "#FFCD00", url: "" },
+            { name: "Gray (Matte)", hex: "#888B8D", url: "" },
+            { name: "Ivory White (Matte)", hex: "#F2F0EB", url: "" },
+            { name: "Silk Gold", hex: "#D4AF37", url: "" },
+            { name: "Silk Silver", hex: "#C0C0C0", url: "" },
+            { name: "Silk Bronze", hex: "#CD7F32", url: "" }
         ];
 
         document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
@@ -186,16 +198,16 @@
         }
 
         function renderColors() {
-            let html = colorData.map((c, i) => `
+            let html = bambuColors.map((c, i) => `
                 <div class="color-item">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
                         <div style="display:flex; align-items:center;">
-                            <div class="color-dot" style="background:${c.hex}"></div>
+                            <div class="color-dot" style="background: ${c.hex}"></div>
                             <span>${c.name}</span>
                         </div>
-                        <input type="checkbox" class="color-sel" data-index="${i}" style="width:18px; height:18px;">
+                        <input type="checkbox" class="color-check" data-name="${c.name}" data-index="${i}">
                     </div>
-                    <input type="text" class="col-link" id="link-${i}" placeholder="Пряме посилання на колір" value="${c.url}" style="font-size:12px; padding:8px;">
+                    <input type="text" class="col-link" id="link-${i}" placeholder="Посилання на колір" style="font-size:11px; padding:8px; border-radius:8px;">
                 </div>
             `).join('');
             document.getElementById('color-list-container').innerHTML = html;
@@ -217,6 +229,7 @@
             let el = (pwr / 1000) * t * 4.32;
             let net = (w * (plastic / 1000)) + el + (t * 5); 
             let total = (net * (1 + scrap / 100) * (1 + markup / 100)) + pack + zsu;
+            
             document.getElementById('res').innerText = Math.round(total) + " ₴";
         }
 
@@ -224,28 +237,28 @@
             let res = document.getElementById('res').innerText;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
-            let name = document.getElementById('p1_name').value || "Виріб";
+            let name = document.getElementById('p1_name').value || "Деталь";
             let ship = document.getElementById('shipping').value;
             let time = document.getElementById('deadline').value;
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
-            let selCols = [];
-            document.querySelectorAll('.color-sel:checked').forEach(el => {
+            // Кольори з посиланнями
+            let selectedColors = [];
+            document.querySelectorAll('.color-check:checked').forEach(el => {
                 let idx = el.getAttribute('data-index');
-                let link = document.getElementById('link-' + idx).value;
-                selCols.push(`• ${colorData[idx].name}${link ? ': ' + link : ''}`);
+                let colorName = el.getAttribute('data-name');
+                let colorUrl = document.getElementById('link-' + idx).value;
+                selectedColors.push("• " + colorName + (colorUrl ? ": " + colorUrl : ""));
             });
-            let colText = selCols.length > 0 ? `\n🎨 Колір:\n${selCols.join('\n')}` : "";
+            let colorText = selectedColors.length > 0 ? `\n🎨 Колір:\n${selectedColors.join('\n')}` : "";
 
+            // Оновлення статистики ЗСУ
             let currentTotal = parseInt(localStorage.getItem('total_zsu_donated') || 0);
             let newTotal = currentTotal + zsu;
-            if (zsu > 0) {
-                localStorage.setItem('total_zsu_donated', newTotal);
-                updateZSUDisplay();
-            }
+            if (zsu > 0) { localStorage.setItem('total_zsu_donated', newTotal); updateZSUDisplay(); }
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n\n💰 Сума до сплати: ${res}${zsu > 0 ? '\n🇺🇦 З них донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${newTotal} ₴\n\n🛠 Дякуємо за замовлення!`;
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colorText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${newTotal} ₴\n\n🛠 Дякуємо за замовлення!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
@@ -255,17 +268,45 @@
         }
 
         function saveHistory(name, price) {
-            let h = JSON.parse(localStorage.getItem('dry_v30') || '[]');
-            h.unshift({ name, price, date: new Date().toLocaleTimeString() });
+            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
+            h.unshift({
+                name, price,
+                w: document.getElementById('w').value,
+                t: document.getElementById('t').value,
+                p: document.getElementById('p').value,
+                m: document.getElementById('m').value,
+                b: document.getElementById('b').value,
+                pr: document.getElementById('printer').value,
+                pk: document.getElementById('pack_check').checked,
+                zs: document.getElementById('zsu_amount').value,
+                date: new Date().toLocaleTimeString()
+            });
             if(h.length > 5) h.pop();
-            localStorage.setItem('dry_v30', JSON.stringify(h));
+            localStorage.setItem('dry_v5', JSON.stringify(h));
             renderHistory();
         }
 
+        function restore(i) {
+            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
+            let d = h[i];
+            if(!d) return;
+            document.getElementById('p1_name').value = d.name;
+            document.getElementById('w').value = d.w;
+            document.getElementById('t').value = d.t;
+            document.getElementById('p').value = d.p;
+            document.getElementById('m').value = d.m;
+            document.getElementById('b').value = d.b;
+            document.getElementById('printer').value = d.pr;
+            document.getElementById('pack_check').checked = d.pk;
+            document.getElementById('zsu_amount').value = d.zs || 0;
+            calc();
+            tg.showAlert("Дані відновлено!");
+        }
+
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_v30') || '[]');
-            document.getElementById('history-list').innerHTML = h.map(x => `
-                <div class="history-item">
+            let h = JSON.parse(localStorage.getItem('dry_v5') || '[]');
+            document.getElementById('history-list').innerHTML = h.map((x, i) => `
+                <div class="history-item" onclick="restore(${i})">
                     <span>${x.name} <small>(${x.date})</small></span>
                     <b>${x.price}</b>
                 </div>
