@@ -192,15 +192,16 @@
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
-            let packStatus = document.getElementById('pack_check').checked ? "\n📦 Пакування: Крафт" : "";
+            let isPacked = document.getElementById('pack_check').checked;
             
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            // Чек без принтера, без ваги та без окремої ціни за пакування
-            let text = `🚀 Чек Dryguny:${packStatus}\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let packText = isPacked ? "\n📦Тип пакування: крафт" : "";
+            let text = `🚀Рахунок:${packText}\n💰Сума до сплати: ${res}\n\n🛠Дякуємо за ваще замовлення!`;
             
-            navigator.clipboard.writeText(text);
-            tg.showAlert("Чек скопійовано!");
+            navigator.clipboard.writeText(text).then(() => {
+                tg.showAlert("Чек скопійовано! 🚀");
+            });
         }
     </script>
 </body>
