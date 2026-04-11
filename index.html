@@ -45,9 +45,7 @@
             background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin: 15px 0;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        .switch {
-            position: relative; display: inline-block; width: 50px; height: 26px;
-        }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider-round {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
@@ -60,8 +58,8 @@
         input:checked + .slider-round { background-color: var(--purp); }
         input:checked + .slider-round:before { transform: translateX(24px); }
 
-        .slider-range { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
-        .slider-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
+        .slider-range { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 10px 0; }
+        .slider-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
 
         .main-btn { 
             background: linear-gradient(135deg, #6200ee, #9d50bb); color: white; 
@@ -73,6 +71,16 @@
             padding: 10px; border-radius: 12px; width: 48%; font-size: 11px; cursor: pointer;
         }
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+
+        /* Стилі історії */
+        .history-list { margin-top: 15px; }
+        .history-item { 
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+            border-left: 3px solid var(--purp);
+        }
+        .history-item span { font-size: 14px; }
+        .history-item b { color: var(--cyan); }
     </style>
 </head>
 <body>
@@ -86,20 +94,13 @@
         <div class="price-tag" id="res">0 ₴</div>
         
         <label>⚙️ Профіль 1</label>
-        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва профілю">
+        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва">
         <div class="flex-row">
             <button class="secondary-btn" onclick="saveProfile(1)">Зберегти П1</button>
             <button class="secondary-btn" onclick="loadProfile(1)">Завантажити П1</button>
         </div>
 
-        <label>⚙️ Профіль 2</label>
-        <input type="text" id="p2_name" class="profile-name-input" placeholder="Назва профілю">
-        <div class="flex-row">
-            <button class="secondary-btn" onclick="saveProfile(2)">Зберегти П2</button>
-            <button class="secondary-btn" onclick="loadProfile(2)">Завантажити П2</button>
-        </div>
-
-        <label>🖨️ Оберіть принтер</label>
+        <label>🖨️ Принтер</label>
         <select id="printer" onchange="calc()">
             <option value="150">Bambu Lab A1 (150W)</option>
             <option value="80">Bambu Lab A1 Mini (80W)</option>
@@ -117,18 +118,28 @@
             </label>
         </div>
         
-        <label>⚖️ Вага деталі (грами)</label>
-        <input type="number" id="w" placeholder="Введіть вагу..." oninput="calc()">
+        <label>⚖️ Вага деталі (г)</label>
+        <input type="number" id="w" placeholder="Вага..." oninput="calc()">
         
-        <label>⏱️ Час друку (години)</label>
-        <input type="number" id="t" placeholder="Години друку..." oninput="calc()">
+        <label>⏱️ Час друку (год)</label>
+        <input type="number" id="t" placeholder="Час..." oninput="calc()">
         
+        <label style="display:flex; justify-content:space-between">
+            <span>⚠️ Брак</span><b id="bLabel" style="color:var(--cyan)">5%</b>
+        </label>
+        <input type="range" id="b" min="0" max="20" value="5" class="slider-range" oninput="calc()">
+
         <label style="display:flex; justify-content:space-between">
             <span>📈 Націнка</span><b id="mLabel" style="color:var(--purp)">100%</b>
         </label>
         <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
         
-        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ЧЕК</button>
+        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+
+        <div id="history-container">
+            <label>📜 Останні розрахунки</label>
+            <div id="history-list" class="history-list"></div>
+        </div>
     </div>
 
     <div id="trends" class="card">
@@ -140,27 +151,35 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Завантаження історії при старті
+        renderHistory();
+
         function calc() {
             let printerPower = document.getElementById('printer').value;
             let plastic = document.getElementById('p').value || 0;
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
+            let scrap = document.getElementById('b').value; // Брак
             let packPrice = document.getElementById('pack_check').checked ? 40 : 0;
             
             document.getElementById('mLabel').innerText = markup + "%";
+            document.getElementById('bLabel').innerText = scrap + "%";
             
             let electricity = (printerPower / 1000) * time * 4.32;
-            let baseCost = (weight * (plastic / 1000)) + electricity + (time * 5); 
+            let netCost = (weight * (plastic / 1000)) + electricity + (time * 5); 
             
-            let final = (baseCost * (1 + markup / 100)) + packPrice;
+            // Додаємо брак до собівартості
+            let costWithScrap = netCost * (1 + scrap / 100);
+            
+            let final = (costWithScrap * (1 + markup / 100)) + packPrice;
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
         }
 
         function saveProfile(id) {
             const profile = {
-                name: document.getElementById('p' + id + '_name').value,
+                name: document.getElementById('p1_name').value,
                 p: document.getElementById('p').value,
                 m: document.getElementById('m').value,
                 printer: document.getElementById('printer').value
@@ -176,9 +195,9 @@
                 document.getElementById('p').value = profile.p;
                 document.getElementById('m').value = profile.m;
                 document.getElementById('printer').value = profile.printer;
-                document.getElementById('p' + id + '_name').value = profile.name || "";
+                document.getElementById('p1_name').value = profile.name || "";
                 calc();
-                tg.showAlert("Профіль завантажено!");
+                tg.showAlert("Завантажено!");
             }
         }
 
@@ -193,15 +212,36 @@
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
             let isPacked = document.getElementById('pack_check').checked;
+            let pName = document.getElementById('p1_name').value || "Без назви";
             
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
             let packText = isPacked ? "\n📦Тип пакування: крафт" : "";
-            let text = `🚀Рахунок:${packText}\n💰Сума до сплати: ${res}\n\n🛠Дякуємо за ваще замовлення!`;
+            let text = `🚀Рахунок:${packText}\n💰Сума до сплати: ${res}\n\n🛠Дякуємо за ваше замовлення!`;
             
             navigator.clipboard.writeText(text).then(() => {
                 tg.showAlert("Чек скопійовано! 🚀");
+                addToHistory(pName, res);
             });
+        }
+
+        function addToHistory(name, price) {
+            let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
+            history.unshift({ name, price, date: new Date().toLocaleTimeString() });
+            if(history.length > 5) history.pop(); // Тільки останні 5
+            localStorage.setItem('dryguny_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
+            let list = document.getElementById('history-list');
+            list.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <span>${item.name} <small>(${item.date})</small></span>
+                    <b>${item.price}</b>
+                </div>
+            `).join('');
         }
     </script>
 </body>
