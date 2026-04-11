@@ -47,7 +47,7 @@
             background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin: 10px 0;
             cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
         }
-        .pack-switch input { width: 20px; height: 20px; accent-color: var(--purp); }
+        .pack-switch input { width: 22px; height: 22px; accent-color: var(--purp); cursor: pointer; }
 
         .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
         .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
@@ -63,6 +63,14 @@
             padding: 10px; border-radius: 12px; width: 48%; font-size: 11px; cursor: pointer;
         }
 
+        .trend-item { 
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
+            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+            text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .trend-item b { color: var(--purp); display: block; font-size: 16px; }
+        .trend-item span { font-size: 12px; color: #777; }
+        
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
@@ -102,7 +110,7 @@
         <input type="number" id="p" value="800" oninput="calc()">
 
         <label class="pack-switch">
-            <span>📦 Крафт пакування (40₴)</span>
+            <span>📦 Крафт пакування (+40₴)</span>
             <input type="checkbox" id="pack_check" onchange="calc()">
         </label>
         
@@ -122,13 +130,17 @@
 
     <div id="trends" class="card">
         <h3 style="margin-top:0">Актуальне зараз</h3>
-        <a href="https://makerworld.com/uk" class="trend-item" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: white;">
-            <div><b style="color: var(--purp);">MakerWorld Trends</b><span style="font-size: 12px; color: #777;">Топ 3MF моделей</span></div>
+        <a href="https://makerworld.com/uk" class="trend-item" target="_blank">
+            <div><b>MakerWorld Trends</b><span>Топ 3MF моделей</span></div>
             <div style="font-size:24px">🐉</div>
         </a>
-        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: white;">
-            <div><b style="color: var(--purp);">TikTok Viral</b><span style="font-size: 12px; color: #777;">Що зараз "залітає"</span></div>
+        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" target="_blank">
+            <div><b>TikTok Viral</b><span>Що зараз "залітає"</span></div>
             <div style="font-size:24px">📈</div>
+        </a>
+        <a href="https://www.printables.com/model" class="trend-item" target="_blank">
+            <div><b>Printables</b><span>Найкращі STL</span></div>
+            <div style="font-size:24px">📦</div>
         </a>
     </div>
 
@@ -159,14 +171,15 @@
             let weight = document.getElementById('w').value || 0;
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
-            let packaging = document.getElementById('pack_check').checked ? 40 : 0;
+            let packPrice = document.getElementById('pack_check').checked ? 40 : 0;
             let tariff = 4.32; 
             
             document.getElementById('mLabel').innerText = markup + "%";
             
             let electricity = (printerPower / 1000) * time * tariff;
-            let base = (weight * (plastic / 1000)) + electricity + (time * 5) + packaging; 
-            let final = base * (1 + markup / 100);
+            let base = (weight * (plastic / 1000)) + electricity + (time * 5); 
+            // Розрахунок фінальної суми: (Собівартість * Націнку) + Пакування
+            let final = (base * (1 + markup / 100)) + packPrice;
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
         }
@@ -204,7 +217,7 @@
             let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
             if(!weight) return tg.showAlert("Введи вагу деталі!");
             
-            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n📦 Пакування: ${isPacked}\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀Чек:\n🖨 💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
             navigator.clipboard.writeText(text);
             tg.showAlert("Чек скопійовано!");
         }
