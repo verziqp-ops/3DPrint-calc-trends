@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v11</title>
+    <title>Dryguny Hub v13</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -56,7 +56,7 @@
         .switch-box {
             display: flex; align-items: center; justify-content: space-between;
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin: 10px 0;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .main-btn { 
@@ -64,7 +64,6 @@
             border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 15px;
         }
 
-        /* БЛОК ДОНАТІВ */
         .zsu-total-card {
             background: rgba(3, 218, 198, 0.1); border: 1px solid var(--cyan);
             border-radius: 18px; padding: 15px; margin-top: 20px; text-align: center;
@@ -78,6 +77,7 @@
 
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
         .reset-btn { color: #ff4444; font-size: 10px; background: none; border: none; text-decoration: underline; cursor: pointer; margin-top: 5px; }
+        .discount-badge { font-size: 10px; color: var(--cyan); margin-top: -10px; display: block; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -98,7 +98,12 @@
                 <label>💰 Пластик (грн/кг)</label>
                 <input type="number" id="plast_price" value="850" oninput="calc()">
             </div>
+            <div>
+                <label>🔢 Кількість (шт)</label>
+                <input type="number" id="qty" value="1" min="1" oninput="calc()">
+            </div>
         </div>
+        <span id="discount_info" class="discount_badge" style="display:none; color: var(--cyan); font-size: 10px; margin-left:5px;">🔥 Знижка 10% активована!</span>
 
         <div class="row">
             <div>
@@ -111,11 +116,43 @@
             </div>
         </div>
 
+        <div class="row">
+            <div>
+                <label>🎨 Пост-обробка (₴)</label>
+                <select id="post_select" onchange="updatePostInput()">
+                    <option value="0">Немає</option>
+                    <option value="20">Легка (20 ₴)</option>
+                    <option value="50">Середня (50 ₴)</option>
+                    <option value="100">Складна (100 ₴)</option>
+                    <option value="custom">Своя ціна...</option>
+                </select>
+            </div>
+            <div id="custom_post_div" style="display:none">
+                <label>Власна ціна</label>
+                <input type="number" id="post_custom" value="0" oninput="calc()">
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>✏️ Моделювання (год)</label>
+                <input type="number" id="mod_hours" value="0" step="0.5" oninput="calc()">
+            </div>
+        </div>
+
         <label>📈 Націнка: <b id="mLabel">100%</b></label>
         <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
 
         <label>⚠️ Брак: <b id="bLabel">5%</b></label>
         <input type="range" id="b" min="0" max="30" value="5" class="slider-range" oninput="calc()">
+
+        <div class="switch-box">
+            <span>🚀 ТЕРМІНОВО (+15%)</span>
+            <label class="switch">
+                <input type="checkbox" id="urgent_check" onchange="calc()">
+                <span class="slider"></span>
+            </label>
+        </div>
 
         <div class="switch-box">
             <span>📦 Пакування (40 ₴)</span>
@@ -181,12 +218,18 @@
             { name: "Blue", url: "https://filamentcolors.xyz/media/2024-07-23--14-45-27-front_zHWL8nN.jpg" }
         ];
 
-        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v11') || "";
+        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v13') || "";
         updateZSUTotalDisplay();
         renderColors();
         renderHistory();
 
-        function saveMono() { localStorage.setItem('dry_mono_v11', document.getElementById('mono_card').value); }
+        function saveMono() { localStorage.setItem('dry_mono_v13', document.getElementById('mono_card').value); }
+
+        function updatePostInput() {
+            let val = document.getElementById('post_select').value;
+            document.getElementById('custom_post_div').style.display = (val === 'custom') ? 'block' : 'none';
+            calc();
+        }
 
         function renderColors() {
             let html = drygunyColors.map((c) => `
@@ -203,38 +246,59 @@
         function calc() {
             let pwr = document.getElementById('printer').value;
             let plast = document.getElementById('plast_price').value || 0;
+            let qty = parseInt(document.getElementById('qty').value) || 1;
             let w = document.getElementById('w').value || 0;
             let t = document.getElementById('t').value || 0;
             let m = document.getElementById('m').value;
             let b = document.getElementById('b').value;
+            let modHours = parseFloat(document.getElementById('mod_hours').value) || 0;
             let pack = document.getElementById('pack_check').checked ? 40 : 0;
+            let urgent = document.getElementById('urgent_check').checked;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
+
+            let postVal = document.getElementById('post_select').value;
+            let postPrice = (postVal === 'custom') ? parseFloat(document.getElementById('post_custom').value || 0) : parseFloat(postVal);
             
             document.getElementById('mLabel').innerText = m + "%";
             document.getElementById('bLabel').innerText = b + "%";
             
-            let cost = (w * (plast/1000)) + ((pwr/1000) * t * 4.5) + (t * 4); 
-            let total = (cost * (1 + b/100) * (1 + m/100)) + pack + zsu;
+            // Базова собівартість одного виробу
+            let costPerOne = (w * (plast/1000)) + ((pwr/1000) * t * 4.5) + (t * 4); 
+            let printTotal = (costPerOne * (1 + b/100) * (1 + m/100)) * qty;
+
+            // Знижка 10% на друк від 10 штук
+            if (qty >= 10) {
+                printTotal = printTotal * 0.9;
+                document.getElementById('discount_info').style.display = 'block';
+            } else {
+                document.getElementById('discount_info').style.display = 'none';
+            }
+
+            let modelingPrice = modHours * 50;
+            let total = printTotal + modelingPrice + postPrice + pack + zsu;
+
+            if (urgent) total = total * 1.15;
+
             document.getElementById('res').innerText = Math.round(total) + " ₴";
         }
 
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let name = document.getElementById('p1_name').value || "Модель";
+            let qty = document.getElementById('qty').value;
             let ship = document.getElementById('shipping').value;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
-
             let col = [];
             document.querySelectorAll('.color-check:checked').forEach(el => col.push(el.getAttribute('data-name')));
 
-            let msg = `🚀 Чек:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
+            let msg = `🚀 Чек:\n📦 Виріб: ${name} (x${qty})\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
                 if(zsu > 0) {
-                    let current = parseInt(localStorage.getItem('dry_zsu_total_v11') || 0);
-                    localStorage.setItem('dry_zsu_total_v11', current + zsu);
+                    let current = parseInt(localStorage.getItem('dry_zsu_total_v13') || 0);
+                    localStorage.setItem('dry_zsu_total_v13', current + zsu);
                     updateZSUTotalDisplay();
                 }
                 saveHistory();
@@ -243,53 +307,31 @@
 
         function resetZSU() {
             if(confirm("Обнулити загальну суму донатів?")) {
-                localStorage.setItem('dry_zsu_total_v11', 0);
+                localStorage.setItem('dry_zsu_total_v13', 0);
                 updateZSUTotalDisplay();
             }
         }
 
         function updateZSUTotalDisplay() {
-            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total_v11') || 0) + " ₴";
+            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total_v13') || 0) + " ₴";
         }
 
         function saveHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_h_v13') || '[]');
             let data = {
-                name: document.getElementById('p1_name').value,
+                name: document.getElementById('p1_name').value + " (x" + document.getElementById('qty').value + ")",
                 price: document.getElementById('res').innerText,
-                w: document.getElementById('w').value,
-                t: document.getElementById('t').value,
-                m: document.getElementById('m').value,
-                b: document.getElementById('b').value,
-                pp: document.getElementById('plast_price').value,
-                pk: document.getElementById('pack_check').checked,
-                z: document.getElementById('zsu_amount').value,
                 date: new Date().toLocaleTimeString()
             };
             h.unshift(data); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v11', JSON.stringify(h));
+            localStorage.setItem('dry_h_v13', JSON.stringify(h));
             renderHistory();
         }
 
-        function restore(i) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
-            let d = h[i];
-            document.getElementById('p1_name').value = d.name;
-            document.getElementById('w').value = d.w;
-            document.getElementById('t').value = d.t;
-            document.getElementById('m').value = d.m;
-            document.getElementById('b').value = d.b;
-            document.getElementById('plast_price').value = d.pp;
-            document.getElementById('pack_check').checked = d.pk;
-            document.getElementById('zsu_amount').value = d.z;
-            calc();
-            tg.showAlert("Дані відновлено!");
-        }
-
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_h_v13') || '[]');
             document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + 
-                h.map((x, i) => `<div class="history-item" onclick="restore(${i})"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
+                h.map((x) => `<div class="history-item"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
         }
 
         function openTab(id, btn) {
@@ -301,10 +343,8 @@
 
         function copyStock() {
             let sel = [];
-            document.querySelectorAll('.color-check:checked').forEach(el => {
-                sel.push(`✅ ${el.getAttribute('data-name')}`);
-            });
-            navigator.clipboard.writeText(`🎨Наявність:\n\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
+            document.querySelectorAll('.color-check:checked').forEach(el => sel.push(`✅ ${el.getAttribute('data-name')}`));
+            navigator.clipboard.writeText(`🎨 Наявність:\n\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
         }
     </script>
 </body>
