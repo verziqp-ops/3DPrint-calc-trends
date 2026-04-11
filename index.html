@@ -63,8 +63,9 @@
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid var(--purp); cursor: pointer;
+            border-left: 4px solid var(--purp); cursor: pointer; transition: 0.2s;
         }
+        .history-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
         input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--cyan); cursor: pointer; }
 
@@ -125,7 +126,7 @@
         <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
         <div id="history-container" style="margin-top: 25px;">
-            <label>📜 Останні розрахунки</label>
+            <label>📜 Історія (тисни для відновлення)</label>
             <div id="history-list"></div>
         </div>
     </div>
@@ -218,8 +219,8 @@
             let zsu = parseInt(document.getElementById('zsu_amount').value);
             
             let el = (pwr / 1000) * t * 4.32;
-            let net = (w * 0.8) + el + (t * 5); // Спрощена формула (пластик 800 за кг)
-            let total = (net * 1.05 * 2) + pack + zsu; // Брак 5%, націнка 100%
+            let net = (w * 0.8) + el + (t * 5); 
+            let total = (net * 1.05 * 2) + pack + zsu; 
             document.getElementById('res').innerText = Math.round(total) + " ₴";
         }
 
@@ -229,6 +230,12 @@
             let name = document.getElementById('p1_name').value || "Деталь";
             let ship = document.getElementById('shipping').value;
             let zsu = document.getElementById('zsu_amount').value;
+            
+            // Збираємо дані для історії
+            let w = document.getElementById('w').value;
+            let t = document.getElementById('t').value;
+            let pr = document.getElementById('printer').value;
+            let pk = document.getElementById('pack_check').checked;
 
             let sel = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
@@ -242,22 +249,40 @@
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
-                saveHistory(name, res);
+                saveHistory(name, res, w, t, pr, pk, zsu, ship);
             });
         }
 
-        function saveHistory(name, price) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v3') || '[]');
-            h.unshift({ name, price, date: new Date().toLocaleTimeString() });
+        function saveHistory(name, price, w, t, pr, pk, zs, ship) {
+            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
+            h.unshift({ name, price, w, t, pr, pk, zs, ship, date: new Date().toLocaleTimeString() });
             if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v3', JSON.stringify(h));
+            localStorage.setItem('dry_h_v4', JSON.stringify(h));
             renderHistory();
         }
 
+        function restore(index) {
+            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
+            let data = h[index];
+            if(!data) return;
+
+            document.getElementById('p1_name').value = data.name;
+            document.getElementById('w').value = data.w;
+            document.getElementById('t').value = data.t;
+            document.getElementById('printer').value = data.pr;
+            document.getElementById('pack_check').checked = data.pk;
+            document.getElementById('zsu_amount').value = data.zs;
+            document.getElementById('shipping').value = data.ship;
+
+            calc();
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.showAlert("Дані відновлено!");
+        }
+
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v3') || '[]');
-            document.getElementById('history-list').innerHTML = h.map(x => `
-                <div class="history-item">
+            let h = JSON.parse(localStorage.getItem('dry_h_v4') || '[]');
+            document.getElementById('history-list').innerHTML = h.map((x, i) => `
+                <div class="history-item" onclick="restore(${i})">
                     <span>${x.name} <small>(${x.date})</small></span>
                     <b>${x.price}</b>
                 </div>`).join('');
