@@ -36,41 +36,43 @@
         input[type="number"], input[type="text"], select { 
             width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; 
             background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
-            appearance: none;
         }
-        input:focus, select:focus { border-color: var(--purp); }
 
         .profile-name-input { padding: 8px; font-size: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px dashed #555; }
 
-        .pack-switch {
+        /* Стильний Тумблер */
+        .pack-switch-container {
             display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin: 10px 0;
-            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin: 15px 0;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .pack-switch input { width: 22px; height: 22px; accent-color: var(--purp); cursor: pointer; }
+        .switch {
+            position: relative; display: inline-block; width: 50px; height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-round {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 34px;
+        }
+        .slider-round:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider-round { background-color: var(--purp); }
+        input:checked + .slider-round:before { transform: translateX(24px); }
 
-        .slider { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
-        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
+        .slider-range { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 15px 0; }
+        .slider-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; background: var(--purp); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px var(--purp); }
 
         .main-btn { 
             background: linear-gradient(135deg, #6200ee, #9d50bb); color: white; 
             border: none; padding: 18px; border-radius: 18px; width: 100%; 
             font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px;
         }
-
         .secondary-btn {
             background: rgba(255,255,255,0.05); color: white; border: 1px solid #444;
             padding: 10px; border-radius: 12px; width: 48%; font-size: 11px; cursor: pointer;
         }
-
-        .trend-item { 
-            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; 
-            margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
-            text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.05);
-        }
-        .trend-item b { color: var(--purp); display: block; font-size: 16px; }
-        .trend-item span { font-size: 12px; color: #777; }
-        
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
@@ -85,14 +87,14 @@
         <div class="price-tag" id="res">0 ₴</div>
         
         <label>⚙️ Профіль 1</label>
-        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва (напр. PLA Sunlu)">
+        <input type="text" id="p1_name" class="profile-name-input" placeholder="Назва">
         <div class="flex-row">
             <button class="secondary-btn" onclick="saveProfile(1)">Зберегти П1</button>
             <button class="secondary-btn" onclick="loadProfile(1)">Завантажити П1</button>
         </div>
 
         <label>⚙️ Профіль 2</label>
-        <input type="text" id="p2_name" class="profile-name-input" placeholder="Назва (напр. PETG JamgHe)">
+        <input type="text" id="p2_name" class="profile-name-input" placeholder="Назва">
         <div class="flex-row">
             <button class="secondary-btn" onclick="saveProfile(2)">Зберегти П2</button>
             <button class="secondary-btn" onclick="loadProfile(2)">Завантажити П2</button>
@@ -102,68 +104,42 @@
         <select id="printer" onchange="calc()">
             <option value="150">Bambu Lab A1 (150W)</option>
             <option value="80">Bambu Lab A1 Mini (80W)</option>
-            <option value="350">Bambu Lab P1S (350W)</option>
-            <option value="350">Bambu Lab P1P (350W)</option>
+            <option value="350">Bambu Lab P1S/P (350W)</option>
         </select>
 
         <label>💰 Ціна пластику (грн/кг)</label>
         <input type="number" id="p" value="800" oninput="calc()">
 
-        <label class="pack-switch">
-            <span>📦 Крафт пакування (+40₴)</span>
-            <input type="checkbox" id="pack_check" onchange="calc()">
-        </label>
+        <div class="pack-switch-container">
+            <span style="font-size: 14px; font-weight: bold;">📦 Крафт пакування (+40₴)</span>
+            <label class="switch">
+                <input type="checkbox" id="pack_check" onchange="calc()">
+                <span class="slider-round"></span>
+            </label>
+        </div>
         
         <label>⚖️ Вага деталі (грами)</label>
-        <input type="number" id="w" placeholder="Введіть вагу..." oninput="calc()">
+        <input type="number" id="w" placeholder="Вага..." oninput="calc()">
         
         <label>⏱️ Час друку (години)</label>
-        <input type="number" id="t" placeholder="Години друку..." oninput="calc()">
+        <input type="number" id="t" placeholder="Час..." oninput="calc()">
         
         <label style="display:flex; justify-content:space-between">
             <span>📈 Націнка</span><b id="mLabel" style="color:var(--purp)">100%</b>
         </label>
-        <input type="range" id="m" min="0" max="500" value="100" class="slider" oninput="calc()">
+        <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
         
         <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ЧЕК</button>
     </div>
 
     <div id="trends" class="card">
         <h3 style="margin-top:0">Актуальне зараз</h3>
-        <a href="https://makerworld.com/uk" class="trend-item" target="_blank">
-            <div><b>MakerWorld Trends</b><span>Топ 3MF моделей</span></div>
-            <div style="font-size:24px">🐉</div>
-        </a>
-        <a href="https://www.tiktok.com/search?q=3d+printing+ideas" class="trend-item" target="_blank">
-            <div><b>TikTok Viral</b><span>Що зараз "залітає"</span></div>
-            <div style="font-size:24px">📈</div>
-        </a>
-        <a href="https://www.printables.com/model" class="trend-item" target="_blank">
-            <div><b>Printables</b><span>Найкращі STL</span></div>
-            <div style="font-size:24px">📦</div>
-        </a>
+        <p>Переглядайте тренди на MakerWorld та TikTok.</p>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-
-        window.onload = function() {
-            for(let i=1; i<=2; i++) {
-                const saved = localStorage.getItem('dryguny_profile_' + i);
-                if(saved) {
-                    const data = JSON.parse(saved);
-                    if(data.name) document.getElementById('p' + i + '_name').value = data.name;
-                }
-            }
-        };
-
-        function openTab(tabId, btn) {
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
-        }
 
         function calc() {
             let printerPower = document.getElementById('printer').value;
@@ -172,14 +148,14 @@
             let time = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
             let packPrice = document.getElementById('pack_check').checked ? 40 : 0;
-            let tariff = 4.32; 
             
             document.getElementById('mLabel').innerText = markup + "%";
             
-            let electricity = (printerPower / 1000) * time * tariff;
-            let base = (weight * (plastic / 1000)) + electricity + (time * 5); 
-            // Розрахунок фінальної суми: (Собівартість * Націнку) + Пакування
-            let final = (base * (1 + markup / 100)) + packPrice;
+            let electricity = (printerPower / 1000) * time * 4.32;
+            let baseCost = (weight * (plastic / 1000)) + electricity + (time * 5); 
+            
+            // Націнка йде ТІЛЬКИ на собівартість друку. Пакування додається в кінці.
+            let final = (baseCost * (1 + markup / 100)) + packPrice;
             
             document.getElementById('res').innerText = Math.round(final) + " ₴";
         }
@@ -192,7 +168,7 @@
                 printer: document.getElementById('printer').value
             };
             localStorage.setItem('dryguny_profile_' + id, JSON.stringify(profile));
-            tg.showAlert("Профіль " + (profile.name || id) + " збережено!");
+            tg.showAlert("Збережено!");
         }
 
         function loadProfile(id) {
@@ -202,24 +178,28 @@
                 document.getElementById('p').value = profile.p;
                 document.getElementById('m').value = profile.m;
                 document.getElementById('printer').value = profile.printer;
-                if(profile.name) document.getElementById('p' + id + '_name').value = profile.name;
+                document.getElementById('p' + id + '_name').value = profile.name || "";
                 calc();
-                tg.showAlert("Профіль завантажено!");
-            } else {
-                tg.showAlert("Профіль не знайдено.");
+                tg.showAlert("Завантажено!");
             }
+        }
+
+        function openTab(tabId, btn) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
         }
 
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let weight = document.getElementById('w').value;
             let isPacked = document.getElementById('pack_check').checked ? "Крафт (40₴)" : "Стандарт";
-            let printerName = document.getElementById('printer').options[document.getElementById('printer').selectedIndex].text;
-            if(!weight) return tg.showAlert("Введи вагу деталі!");
+            if(!weight) return tg.showAlert("Введи вагу!");
             
-            let text = `🚀Чек:\n🖨 Принтер: ${printerName}\n⚖️ Вага: ${weight}г\n📦 Пакування: ${isPacked}\n💰 Разом до оплати: ${res}\n\nДякуємо за замовлення! 🛠`;
+            let text = `🚀 Чек:\n⚖️ Вага: ${weight}г\n📦 Пакування: ${isPacked}\n💰 Разом: ${res}\n\nДякуємо! 🛠`;
             navigator.clipboard.writeText(text);
-            tg.showAlert("Чек скопійовано!");
+            tg.showAlert("Скопійовано!");
         }
     </script>
 </body>
