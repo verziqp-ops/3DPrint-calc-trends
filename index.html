@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub Ultimate</title>
+    <title>Dryguny Hub Ultimate v8</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -37,10 +37,7 @@
             background: rgba(0,0,0,0.4); color: white; font-size: 16px; box-sizing: border-box; outline: none;
         }
 
-        /* СТИЛЬ ТУМБЛЕРА */
-        .switch {
-            position: relative; display: inline-block; width: 44px; height: 24px;
-        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
@@ -67,37 +64,29 @@
             border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 15px;
         }
 
-        .secondary-btn {
-            background: rgba(255,255,255,0.05); color: var(--cyan); border: 1px solid var(--cyan);
-            padding: 12px; border-radius: 12px; width: 100%; margin-bottom: 15px; cursor: pointer; font-weight: bold;
-        }
-
-        .color-item { 
-            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 15px; margin-bottom: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--purp); cursor: pointer;
         }
 
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
-        .google-link { color: var(--cyan); text-decoration: none; font-size: 12px; margin-left: 8px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('calc', this)">💎 Розрахунок</button>
-        <button class="tab-btn" onclick="openTab('colors', this)">🎨 Наявність</button>
+        <button class="tab-btn" onclick="openTab('colors', this)">🎨 Кольори</button>
     </div>
 
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
-        <label>⚙️ Модель</label>
-        <input type="text" id="p1_name" placeholder="Назва моделі">
+        <label>⚙️ Назва та ціна пластику</label>
+        <div class="row">
+            <input type="text" id="p1_name" placeholder="Назва моделі" style="flex:2">
+            <input type="number" id="plast_price" value="850" placeholder="грн/кг" oninput="calc()">
+        </div>
 
         <div class="row">
             <div>
@@ -110,19 +99,11 @@
             </div>
         </div>
 
-        <label>📈 Параметри прибутку</label>
-        <div class="row">
-            <div>
-                <label>Націнка: <b id="mLabel">100%</b></label>
-                <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
-            </div>
-        </div>
-        <div class="row">
-            <div>
-                <label>Брак: <b id="bLabel">5%</b></label>
-                <input type="range" id="b" min="0" max="30" value="5" class="slider-range" oninput="calc()">
-            </div>
-        </div>
+        <label>📈 Націнка: <b id="mLabel">100%</b></label>
+        <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
+
+        <label>⚠️ Брак: <b id="bLabel">5%</b></label>
+        <input type="range" id="b" min="0" max="30" value="5" class="slider-range" oninput="calc()">
 
         <div class="switch-box">
             <span>📦 Пакування (40 ₴)</span>
@@ -132,7 +113,15 @@
             </label>
         </div>
 
-        <label>🚚 Деталі</label>
+        <label>🇺🇦 Донат ЗСУ</label>
+        <select id="zsu_amount" onchange="calc()">
+            <option value="0">Без донату</option>
+            <option value="20">20 ₴</option>
+            <option value="50">50 ₴</option>
+            <option value="100">100 ₴</option>
+        </select>
+
+        <label>🚚 Деталі замовлення</label>
         <div class="row">
             <select id="printer" onchange="calc()">
                 <option value="150">Bambu A1</option>
@@ -140,14 +129,14 @@
                 <option value="350">P1S/X1</option>
             </select>
             <select id="shipping">
-                <option value="Нова Пошта">📦 НП</option>
-                <option value="Укрпошта">📦 УП</option>
-                <option value="Самовивіз">🏙️ Самовивіз</option>
+                <option value="Нова Пошта">Нова Пошта</option>
+                <option value="Укрпошта">Укрпошта</option>
+                <option value="Самовивіз">Самовивіз (Тн)</option>
             </select>
         </div>
 
-        <label>💳 Карта</label>
-        <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
+        <label>💳 Реквізити</label>
+        <input type="text" id="mono_card" placeholder="Карта Monobank" oninput="saveMono()">
 
         <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
@@ -155,7 +144,7 @@
     </div>
 
     <div id="colors" class="card">
-        <button class="secondary-btn" onclick="copyStock()">📋 КОПІЮВАТИ СПИСОК НАЯВНОСТІ</button>
+        <button class="main-btn" onclick="copyStock()" style="background:var(--cyan); color:black; margin-bottom:20px">📋 КОПІЮВАТИ НАЯВНІСТЬ</button>
         <div id="color-list-container"></div>
     </div>
 
@@ -163,81 +152,54 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // СЮДИ ВСТАВЛЯЙ СВОЇ ПОСИЛАННЯ
         const drygunyColors = [
-            { name: "Basic Purple", url: "https://посилання-на-фото" },
-            { name: "Basic Gold", url: "https://посилання-на-фото" },
-            { name: "Basic Bronze", url: "https://посилання-на-фото" },
-            { name: "Basic Green", url: "https://посилання-на-фото" },
-            { name: "Basic Yellow", url: "" },
-            { name: "Basic Red", url: "" },
-            { name: "Black", url: "" },
-            { name: "Basic Jade White", url: "" },
-            { name: "Basic Magenta", url: "" },
-            { name: "Basic Cyan", url: "" },
-            { name: "Basic Silver", url: "" },
-            { name: "Basic Blue", url: "" },
+            { name: "Basic Purple", url: "" },
+            { name: "Basic Gold", url: "" },
+            { name: "Basic Green", url: "" },
+            { name: "Basic Black", url: "" },
+            { name: "Basic White", url: "" },
             { name: "Silk Gold", url: "" },
             { name: "Silk Silver", url: "" },
-            { name: "Silk Copper", url: "" },
-            { name: "Silk Blue", url: "" },
-            { name: "CF Burgundy Red", url: "" },
-            { name: "CF Jeans Blue", url: "" },
-            { name: "CF Lava Gray", url: "" },
-            { name: "CF Matcha Green", url: "" }
+            { name: "CF Lava Gray", url: "" }
         ];
 
-        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v6') || "";
+        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v8') || "";
         renderColors();
         renderHistory();
 
-        function saveMono() { localStorage.setItem('dry_mono_v6', document.getElementById('mono_card').value); }
+        function saveMono() { localStorage.setItem('dry_mono_v8', document.getElementById('mono_card').value); }
 
         function renderColors() {
-            let html = drygunyColors.map((c, i) => {
-                let google = `https://www.google.com/search?q=Bambu+Lab+${c.name.replace(' ','+')}+color`;
-                return `
-                <div class="color-item">
-                    <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <div style="display:flex; align-items:center;">
-                            <span style="font-size:14px; font-weight:bold;">${c.name}</span>
-                            <a href="${google}" target="_blank" class="google-link">🔍</a>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" class="color-check" data-name="${c.name}" data-url="${c.url}">
-                            <span class="slider"></span>
-                        </label>
+            let html = drygunyColors.map((c, i) => `
+                <div class="switch-box">
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-weight:bold">${c.name}</span>
+                        <small style="color:#666; font-size:10px">${c.url || 'фото немає'}</small>
                     </div>
-                    <div style="font-size:10px; color:#666; margin-top:5px; word-break:break-all;">${c.url || 'Фото не додано'}</div>
-                </div>`;
-            }).join('');
+                    <label class="switch">
+                        <input type="checkbox" class="color-check" data-name="${c.name}" data-url="${c.url}">
+                        <span class="slider"></span>
+                    </label>
+                </div>`).join('');
             document.getElementById('color-list-container').innerHTML = html;
         }
 
         function calc() {
             let pwr = document.getElementById('printer').value;
+            let plast = document.getElementById('plast_price').value || 0;
             let w = document.getElementById('w').value || 0;
             let t = document.getElementById('t').value || 0;
             let m = document.getElementById('m').value;
             let b = document.getElementById('b').value;
             let pack = document.getElementById('pack_check').checked ? 40 : 0;
+            let zsu = parseInt(document.getElementById('zsu_amount').value);
             
             document.getElementById('mLabel').innerText = m + "%";
             document.getElementById('bLabel').innerText = b + "%";
             
-            let cost = (w * 0.85) + ((pwr/1000) * t * 4.5) + (t * 4); // Собівартість
-            let total = (cost * (1 + b/100) * (1 + m/100)) + pack;
+            let cost = (w * (plast/1000)) + ((pwr/1000) * t * 4.5) + (t * 4); 
+            let total = (cost * (1 + b/100) * (1 + m/100)) + pack + zsu;
             document.getElementById('res').innerText = Math.round(total) + " ₴";
-        }
-
-        function copyStock() {
-            let sel = [];
-            document.querySelectorAll('.color-check:checked').forEach(el => {
-                sel.push(`✅ ${el.getAttribute('data-name')}\n🔗 Фото: ${el.getAttribute('data-url') || 'за запитом'}`);
-            });
-            if(sel.length === 0) return tg.showAlert("Вибери кольори!");
-            navigator.clipboard.writeText(`🎨 Dryguny — Доступні кольори:\n\n${sel.join('\n\n')}`)
-                .then(() => tg.showAlert("Список наявності скопійовано!"));
         }
 
         function copyCheck() {
@@ -245,34 +207,56 @@
             let name = document.getElementById('p1_name').value || "Модель";
             let ship = document.getElementById('shipping').value;
             let card = document.getElementById('mono_card').value;
+            let zsu = document.getElementById('zsu_amount').value;
 
             let col = [];
-            document.querySelectorAll('.color-check:checked').forEach(el => {
-                col.push(`• ${el.getAttribute('data-name')}`);
-            });
+            document.querySelectorAll('.color-check:checked').forEach(el => col.push(el.getAttribute('data-name')));
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}\n💳 Карта: ${card}\n\n🛠 Дякуємо за замовлення!`;
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 В т.ч. донат ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
-                saveHistory(name, res);
+                saveHistory();
             });
         }
 
-        function saveHistory(name, price) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v6') || '[]');
-            h.unshift({ name, price, date: new Date().toLocaleTimeString() });
-            if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v6', JSON.stringify(h));
+        function saveHistory() {
+            let h = JSON.parse(localStorage.getItem('dry_h_v8') || '[]');
+            let data = {
+                name: document.getElementById('p1_name').value,
+                price: document.getElementById('res').innerText,
+                w: document.getElementById('w').value,
+                t: document.getElementById('t').value,
+                m: document.getElementById('m').value,
+                b: document.getElementById('b').value,
+                pp: document.getElementById('plast_price').value,
+                pk: document.getElementById('pack_check').checked,
+                z: document.getElementById('zsu_amount').value,
+                date: new Date().toLocaleTimeString()
+            };
+            h.unshift(data); if(h.length > 5) h.pop();
+            localStorage.setItem('dry_h_v8', JSON.stringify(h));
             renderHistory();
         }
 
+        function restore(i) {
+            let h = JSON.parse(localStorage.getItem('dry_h_v8') || '[]');
+            let d = h[i];
+            document.getElementById('p1_name').value = d.name;
+            document.getElementById('w').value = d.w;
+            document.getElementById('t').value = d.t;
+            document.getElementById('m').value = d.m;
+            document.getElementById('b').value = d.b;
+            document.getElementById('plast_price').value = d.pp;
+            document.getElementById('pack_check').checked = d.pk;
+            document.getElementById('zsu_amount').value = d.z;
+            calc();
+            tg.showAlert("Дані відновлено!");
+        }
+
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v6') || '[]');
-            document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + h.map(x => `
-                <div class="history-item">
-                    <span>${x.name}</span>
-                    <b>${x.price}</b>
-                </div>`).join('');
+            let h = JSON.parse(localStorage.getItem('dry_h_v8') || '[]');
+            document.getElementById('history-list').innerHTML = `<label>📜 Останні розрахунки</label>` + 
+                h.map((x, i) => `<div class="history-item" onclick="restore(${i})"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
         }
 
         function openTab(id, btn) {
@@ -280,6 +264,14 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
+        }
+
+        function copyStock() {
+            let sel = [];
+            document.querySelectorAll('.color-check:checked').forEach(el => {
+                sel.push(`✅ ${el.getAttribute('data-name')}\n🔗 Фото: ${el.getAttribute('data-url') || 'за запитом'}`);
+            });
+            navigator.clipboard.writeText(`🎨 Dryguny — Наявність:\n\n${sel.join('\n\n')}`).then(() => tg.showAlert("Скопійовано!"));
         }
     </script>
 </body>
