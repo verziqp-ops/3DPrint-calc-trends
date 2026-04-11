@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v16</title>
+    <title>Dryguny Hub v16.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -92,6 +92,9 @@
         <label>📝 Назва моделі</label>
         <input type="text" id="p1_name" placeholder="Введіть назву тут...">
 
+        <label>🎁 Подарункова модель (до основної)</label>
+        <input type="text" id="gift_model_name" placeholder="Назва безкоштовної моделі...">
+
         <div class="row">
             <div>
                 <label>💰 Пластик (грн/кг)</label>
@@ -144,6 +147,14 @@
 
         <label>⚠️ Брак: <b id="bLabel">5%</b></label>
         <input type="range" id="b" min="0" max="30" value="5" class="slider-range" oninput="calc()">
+
+        <div class="switch-box" style="border-color: var(--cyan);">
+            <span>🎁 ПОВНІСТЮ БЕЗКОШТОВНО</span>
+            <label class="switch">
+                <input type="checkbox" id="is_full_gift" onchange="calc()">
+                <span class="slider"></span>
+            </label>
+        </div>
 
         <div class="switch-box">
             <span>🚀 ТЕРМІНОВО (+15%)</span>
@@ -240,6 +251,11 @@
         }
 
         function calc() {
+            if (document.getElementById('is_full_gift').checked) {
+                document.getElementById('res').innerText = "🎁 ПОДАРУНОК (0 ₴)";
+                return;
+            }
+
             let pwr = document.getElementById('printer').value;
             let plast = document.getElementById('plast_price').value || 0;
             let qty = parseInt(document.getElementById('qty').value) || 1;
@@ -278,23 +294,29 @@
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let name = document.getElementById('p1_name').value || "Модель";
+            let giftName = document.getElementById('gift_model_name').value;
             let qty = document.getElementById('qty').value;
             let ship = document.getElementById('shipping').value;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
+            let isFullGift = document.getElementById('is_full_gift').checked;
+            
             let col = [];
             document.querySelectorAll('.color-check:checked').forEach(el => col.push(el.getAttribute('data-name')));
 
-            let msg = `🚀 Чек:\n📦 Виріб: ${name} (x${qty})\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
+            let itemsText = `📦 Виріб: ${name} (x${qty})`;
+            if(giftName) itemsText += `\n🎁 Подарунок: ${giftName} (1 шт)`;
+
+            let msg = `🚀 Чек:\n${itemsText}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
-                if(zsu > 0) {
+                if(zsu > 0 && !isFullGift) {
                     let current = parseInt(localStorage.getItem('dry_zsu_total') || 0);
                     localStorage.setItem('dry_zsu_total', current + zsu);
                     updateZSUTotalDisplay();
                 }
-                saveHistory(); // Збереже дані ПІСЛЯ копіювання
+                saveHistory();
             });
         }
 
@@ -302,6 +324,7 @@
             let h = JSON.parse(localStorage.getItem('dry_history_list') || '[]');
             let data = {
                 name: document.getElementById('p1_name').value || "Без назви",
+                giftName: document.getElementById('gift_model_name').value,
                 qty: document.getElementById('qty').value,
                 plast: document.getElementById('plast_price').value,
                 w: document.getElementById('w').value,
@@ -315,6 +338,7 @@
                 urg: document.getElementById('urgent_check').checked,
                 zsu: document.getElementById('zsu_amount').value,
                 print: document.getElementById('printer').value,
+                isFullGift: document.getElementById('is_full_gift').checked,
                 price: document.getElementById('res').innerText
             };
             h.unshift(data); if(h.length > 5) h.pop();
@@ -328,6 +352,7 @@
             if(!d) return;
 
             document.getElementById('p1_name').value = d.name;
+            document.getElementById('gift_model_name').value = d.giftName || "";
             document.getElementById('qty').value = d.qty;
             document.getElementById('plast_price').value = d.plast;
             document.getElementById('w').value = d.w;
@@ -341,6 +366,7 @@
             document.getElementById('urgent_check').checked = d.urg;
             document.getElementById('zsu_amount').value = d.zsu;
             document.getElementById('printer').value = d.print;
+            document.getElementById('is_full_gift').checked = d.isFullGift || false;
             
             updatePostInput();
             tg.showAlert("Дані відновлено!");
