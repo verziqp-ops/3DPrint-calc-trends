@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v16.1</title>
+    <title>Dryguny Hub v16.2</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -93,7 +93,7 @@
         <input type="text" id="p1_name" placeholder="Введіть назву тут...">
 
         <label>🎁 Подарункова модель (до основної)</label>
-        <input type="text" id="gift_model_name" placeholder="Назва безкоштовної моделі...">
+        <input type="text" id="gift_model_name" placeholder="Назва моделі в подарунок...">
 
         <div class="row">
             <div>
@@ -105,7 +105,7 @@
                 <input type="number" id="qty" value="1" min="1" oninput="calc()">
             </div>
         </div>
-        <span id="discount_info" style="display:none; color: var(--cyan); font-size: 10px; margin-left:5px;">🔥 Знижка 10% активована!</span>
+        <span id="discount_info" style="display:none; color: var(--cyan); font-size: 10px; margin-left:5px;">🔥 Опт -10% активовано!</span>
 
         <div class="row">
             <div>
@@ -115,6 +115,13 @@
             <div>
                 <label>⏱️ Час (год)</label>
                 <input type="number" id="t" placeholder="0" oninput="calc()">
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>📉 Ручна Знижка (%)</label>
+                <input type="number" id="manual_disc" value="0" min="0" max="100" oninput="calc()">
             </div>
         </div>
 
@@ -267,6 +274,7 @@
             let pack = document.getElementById('pack_check').checked ? 40 : 0;
             let urgent = document.getElementById('urgent_check').checked;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
+            let manualDisc = parseFloat(document.getElementById('manual_disc').value) || 0;
 
             let postVal = document.getElementById('post_select').value;
             let postPrice = (postVal === 'custom') ? parseFloat(document.getElementById('post_custom').value || 0) : parseFloat(postVal);
@@ -286,6 +294,8 @@
 
             let modelingPrice = modHours * 50;
             let total = printTotal + modelingPrice + postPrice + pack + zsu;
+            
+            if (manualDisc > 0) total = total * (1 - manualDisc/100);
             if (urgent) total = total * 1.15;
 
             document.getElementById('res').innerText = Math.round(total) + " ₴";
@@ -300,14 +310,15 @@
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
             let isFullGift = document.getElementById('is_full_gift').checked;
+            let mD = document.getElementById('manual_disc').value;
             
             let col = [];
             document.querySelectorAll('.color-check:checked').forEach(el => col.push(el.getAttribute('data-name')));
 
             let itemsText = `📦 Виріб: ${name} (x${qty})`;
-            if(giftName) itemsText += `\n🎁 Подарунок: ${giftName} (1 шт)`;
+            if(giftName) itemsText += `\n🎁 + Подарунок: ${giftName} (1 шт)`;
 
-            let msg = `🚀 Чек:\n${itemsText}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
+            let msg = `🚀 Чек:\n${itemsText}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${(!isFullGift && mD > 0) ? '\n📉 Знижка: ' + mD + '%' : ''}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
@@ -339,6 +350,7 @@
                 zsu: document.getElementById('zsu_amount').value,
                 print: document.getElementById('printer').value,
                 isFullGift: document.getElementById('is_full_gift').checked,
+                mDisc: document.getElementById('manual_disc').value,
                 price: document.getElementById('res').innerText
             };
             h.unshift(data); if(h.length > 5) h.pop();
@@ -366,6 +378,7 @@
             document.getElementById('urgent_check').checked = d.urg;
             document.getElementById('zsu_amount').value = d.zsu;
             document.getElementById('printer').value = d.print;
+            document.getElementById('manual_disc').value = d.mDisc || 0;
             document.getElementById('is_full_gift').checked = d.isFullGift || false;
             
             updatePostInput();
