@@ -43,22 +43,7 @@
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; margin: 8px 0;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-round {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333; transition: .4s; border-radius: 34px;
-        }
-        .slider-round:before {
-            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider-round { background-color: var(--purp); }
-        input:checked + .slider-round:before { transform: translateX(22px); }
-
-        .slider-range { width: 100%; -webkit-appearance: none; height: 6px; background: #222; border-radius: 5px; margin: 10px 0; }
-        .slider-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: var(--purp); border-radius: 50%; cursor: pointer; }
-
+        
         .main-btn { 
             background: linear-gradient(135deg, #6200ee, #9d50bb); color: white; 
             border: none; padding: 18px; border-radius: 18px; width: 100%; 
@@ -70,19 +55,24 @@
         }
         .flex-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
 
+        .color-item { 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .color-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #555; margin-right: 10px; }
+        
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; 
             margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 3px solid var(--purp); cursor: pointer;
+            border-left: 4px solid var(--purp); cursor: pointer;
         }
-
-        .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; border: 1px solid #fff; }
+        .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab('calc', this)">💎 Розрахунок</button>
+        <button class="tab-btn active" onclick="openTab('calc', this)">💎 Чек</button>
         <button class="tab-btn" onclick="openTab('colors', this)">🎨 Кольори</button>
     </div>
 
@@ -93,11 +83,7 @@
         <input type="text" id="mono_card" placeholder="0000 0000 0000 0000" oninput="saveMono()">
 
         <label>⚙️ Назва замовлення</label>
-        <input type="text" id="p1_name" placeholder="Назва для історії...">
-        <div class="flex-row">
-            <button class="secondary-btn" onclick="saveProfile(1)">Зберегти П1</button>
-            <button class="secondary-btn" onclick="loadProfile(1)">Завантажити П1</button>
-        </div>
+        <input type="text" id="p1_name" placeholder="Наприклад: Дракон">
 
         <label>🖨️ Принтер</label>
         <select id="printer" onchange="calc()">
@@ -110,15 +96,12 @@
         <input type="number" id="p" value="800" oninput="calc()">
 
         <div class="switch-box">
-            <span style="font-size: 13px; font-weight: bold;">📦 Крафт пакування (+40₴)</span>
-            <label class="switch">
-                <input type="checkbox" id="pack_check" onchange="calc()">
-                <span class="slider-round"></span>
-            </label>
+            <span>📦 Крафт пакування (+40₴)</span>
+            <input type="checkbox" id="pack_check" style="width:20px; height:20px" onchange="calc()">
         </div>
 
         <div class="switch-box" style="border-color: var(--cyan);">
-            <span style="font-size: 13px; font-weight: bold; color: var(--cyan);">🇺🇦 Донат на ЗСУ</span>
+            <span style="color: var(--cyan);">🇺🇦 Донат на ЗСУ</span>
             <select id="zsu_amount" style="width: 80px; margin: 0; padding: 5px; font-size: 12px;" onchange="calc()">
                 <option value="0">0 ₴</option>
                 <option value="20">20 ₴</option>
@@ -133,84 +116,115 @@
         <label>⏱️ Час (год)</label>
         <input type="number" id="t" placeholder="0" oninput="calc()">
         
-        <div style="display:flex; justify-content:space-between; margin-top:10px">
-            <label>⚠️ Брак: <span id="bLabel" style="color:var(--cyan)">5%</span></label>
-            <label>📈 Націнка: <span id="mLabel" style="color:var(--purp)">100%</span></label>
-        </div>
+        <label>⚠️ Брак: <b id="bLabel" style="color:var(--cyan)">5%</b></label>
         <input type="range" id="b" min="0" max="20" value="5" class="slider-range" oninput="calc()">
+
+        <label>📈 Націнка: <b id="mLabel" style="color:var(--purp)">100%</b></label>
         <input type="range" id="m" min="0" max="500" value="100" class="slider-range" oninput="calc()">
         
-        <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ЧЕК</button>
+        <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
         <div id="history-container" style="margin-top: 25px;">
-            <label>📜 Останні розрахунки</label>
+            <label>📜 Останні 5 розрахунків</label>
             <div id="history-list"></div>
         </div>
     </div>
 
     <div id="colors" class="card">
-        <h3 style="margin-top:0">🎨 Наявні кольори</h3>
-        <div id="color-list">
-            <div style="padding: 10px; border-bottom: 1px solid #333;"><span class="color-dot" style="background: black;"></span> Black PLA</div>
-            <div style="padding: 10px; border-bottom: 1px solid #333;"><span class="color-dot" style="background: white;"></span> White PLA</div>
-            <div style="padding: 10px; border-bottom: 1px solid #333;"><span class="color-dot" style="background: red;"></span> Red PLA</div>
-            <div style="padding: 10px; border-bottom: 1px solid #333;"><span class="color-dot" style="background: linear-gradient(to right, red, orange, yellow, green, blue, violet);"></span> Silk Rainbow</div>
-            <div style="padding: 10px; border-bottom: 1px solid #333;"><span class="color-dot" style="background: #00ff00;"></span> Neon Green PETG</div>
-        </div>
+        <h3 style="margin-top:0">🎨 Палітра Bambu Lab</h3>
+        <button class="main-btn" style="margin-bottom: 15px; background: var(--cyan); color: #000;" onclick="copyColorList()">📋 СКОПІЮВАТИ СПИСОК ТЕКСТОМ</button>
+        
+        <div id="color-list-container">
+            </div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Повний список кольорів Bambu Lab
+        const bambuColors = [
+            { name: "Black (Basic)", hex: "#000000" },
+            { name: "White (Basic)", hex: "#FFFFFF" },
+            { name: "Red (Basic)", hex: "#EE2737" },
+            { name: "Blue (Basic)", hex: "#005EB8" },
+            { name: "Green (Basic)", hex: "#009639" },
+            { name: "Orange (Basic)", hex: "#FF671F" },
+            { name: "Yellow (Basic)", hex: "#FFCD00" },
+            { name: "Gray (Matte)", hex: "#888B8D" },
+            { name: "Ivory White (Matte)", hex: "#F2F0EB" },
+            { name: "Marine Blue (Matte)", hex: "#004B87" },
+            { name: "Silk Gold", hex: "#D4AF37" },
+            { name: "Silk Silver", hex: "#C0C0C0" },
+            { name: "Silk Bronze", hex: "#CD7F32" },
+            { name: "Rainbow (Silk)", hex: "linear-gradient(to right, red, orange, yellow, green, blue, violet)" }
+        ];
+
         document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
+        renderColors();
         renderHistory();
 
         function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
 
+        function renderColors() {
+            let html = bambuColors.map(c => `
+                <div class="color-item">
+                    <div style="display:flex; align-items:center;">
+                        <div class="color-dot" style="background: ${c.hex}"></div>
+                        <span>${c.name}</span>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('color-list-container').innerHTML = html;
+        }
+
+        function copyColorList() {
+            let text = "🎨 Наявні кольори для друку (Dryguny):\n\n" + bambuColors.map(c => `• ${c.name}`).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                tg.showAlert("Список кольорів скопійовано!");
+            });
+        }
+
         function calc() {
-            let printerPower = document.getElementById('printer').value;
+            let pwr = document.getElementById('printer').value;
             let plastic = document.getElementById('p').value || 0;
-            let weight = document.getElementById('w').value || 0;
-            let time = document.getElementById('t').value || 0;
+            let w = document.getElementById('w').value || 0;
+            let t = document.getElementById('t').value || 0;
             let markup = document.getElementById('m').value;
             let scrap = document.getElementById('b').value;
-            let packPrice = document.getElementById('pack_check').checked ? 40 : 0;
+            let pack = document.getElementById('pack_check').checked ? 40 : 0;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
             
             document.getElementById('mLabel').innerText = markup + "%";
             document.getElementById('bLabel').innerText = scrap + "%";
             
-            let electricity = (printerPower / 1000) * time * 4.32;
-            let netCost = (weight * (plastic / 1000)) + electricity + (time * 5); 
-            let final = (netCost * (1 + scrap / 100) * (1 + markup / 100)) + packPrice + zsu;
+            let el = (pwr / 1000) * t * 4.32;
+            let net = (w * (plastic / 1000)) + el + (t * 5); 
+            let total = (net * (1 + scrap / 100) * (1 + markup / 100)) + pack + zsu;
             
-            document.getElementById('res').innerText = Math.round(final) + " ₴";
+            document.getElementById('res').innerText = Math.round(total) + " ₴";
         }
 
         function copyCheck() {
             let res = document.getElementById('res').innerText;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
-            let pName = document.getElementById('p1_name').value || "Деталь";
+            let name = document.getElementById('p1_name').value || "Деталь";
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
-            let zsuText = zsu > 0 ? `\n🇺🇦 Донат на ЗСУ включено: ${zsu} ₴` : "";
-            let cardText = card ? `\n💳 Карта для оплати: ${card}` : "";
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💰 Сума: ${res}${card ? '\n💳 Карта: ' + card : ''}\n\n🛠 Дякуємо за замовлення!`;
             
-            let text = `🚀 Рахунок Dryguny:\n📦 Виріб: ${pName}${zsuText}\n💰 Сума: ${res}${cardText}\n\n🛠 Дякуємо за замовлення!`;
-            
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
                 tg.showAlert("Чек скопійовано!");
-                saveToHistory(pName, res);
+                saveHistory(name, res);
             });
         }
 
-        function saveToHistory(name, price) {
-            let hist = JSON.parse(localStorage.getItem('dry_hist_v3') || '[]');
-            let data = {
+        function saveHistory(name, price) {
+            let h = JSON.parse(localStorage.getItem('dry_v4') || '[]');
+            h.unshift({
                 name, price,
                 w: document.getElementById('w').value,
                 t: document.getElementById('t').value,
@@ -221,16 +235,16 @@
                 pk: document.getElementById('pack_check').checked,
                 zs: document.getElementById('zsu_amount').value,
                 date: new Date().toLocaleTimeString()
-            };
-            hist.unshift(data);
-            if(hist.length > 5) hist.pop();
-            localStorage.setItem('dry_hist_v3', JSON.stringify(hist));
+            });
+            if(h.length > 5) h.pop();
+            localStorage.setItem('dry_v4', JSON.stringify(h));
             renderHistory();
         }
 
         function restore(i) {
-            let hist = JSON.parse(localStorage.getItem('dry_hist_v3') || '[]');
-            let d = hist[i];
+            let h = JSON.parse(localStorage.getItem('dry_v4') || '[]');
+            let d = h[i];
+            if(!d) return;
             document.getElementById('p1_name').value = d.name;
             document.getElementById('w').value = d.w;
             document.getElementById('t').value = d.t;
@@ -242,14 +256,15 @@
             document.getElementById('zsu_amount').value = d.zs || 0;
             calc();
             tg.showAlert("Дані відновлено!");
+            tg.HapticFeedback.impactOccurred('medium');
         }
 
         function renderHistory() {
-            let hist = JSON.parse(localStorage.getItem('dry_hist_v3') || '[]');
-            document.getElementById('history-list').innerHTML = hist.map((h, i) => `
+            let h = JSON.parse(localStorage.getItem('dry_v4') || '[]');
+            document.getElementById('history-list').innerHTML = h.map((x, i) => `
                 <div class="history-item" onclick="restore(${i})">
-                    <span>${h.name} <small>(${h.date})</small></span>
-                    <b>${h.price}</b>
+                    <span>${x.name} <small>(${x.date})</small></span>
+                    <b>${x.price}</b>
                 </div>
             `).join('');
         }
@@ -259,17 +274,6 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
-        }
-
-        function saveProfile(id) {
-            const prof = { name: document.getElementById('p1_name').value, p: document.getElementById('p').value, m: document.getElementById('m').value };
-            localStorage.setItem('prof_'+id, JSON.stringify(prof));
-            tg.showAlert("Збережено!");
-        }
-
-        function loadProfile(id) {
-            const d = JSON.parse(localStorage.getItem('prof_'+id));
-            if(d) { document.getElementById('p').value = d.p; document.getElementById('m').value = d.m; document.getElementById('p1_name').value = d.name; calc(); }
         }
     </script>
 </body>
