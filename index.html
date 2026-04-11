@@ -113,7 +113,7 @@
         <input type="number" id="p" value="800" oninput="calc()">
 
         <div class="switch-box">
-            <span>📦 Пакування</span>
+            <span>📦 Пакування (40 ₴)</span>
             <input type="checkbox" id="pack_check" onchange="calc()">
         </div>
 
@@ -142,7 +142,7 @@
         <button class="main-btn" onclick="copyCheck()">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
         <div class="zsu-stats">
-            🇺🇦 Всього зібрано на ЗСУ через додаток: <b id="total_zsu_display">0</b> ₴
+            🇺🇦 Всього зібрано на ЗСУ: <b id="total_zsu_display">0</b> ₴
             <br>
             <span style="font-size: 10px; color: #888; cursor: pointer; text-decoration: underline;" onclick="resetZSU()">Оновити збір</span>
         </div>
@@ -155,7 +155,7 @@
 
     <div id="colors" class="card">
         <h3 style="margin-top:0">🎨 Наявність кольорів</h3>
-        <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">Впиши посилання на фото кольору, якщо воно є.</p>
+        <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">Впиши посилання. Вони зберігаються автоматично.</p>
         <div id="color-list-container"></div>
     </div>
 
@@ -164,18 +164,19 @@
         tg.expand();
 
         const bambuColors = [
-            { name: "Black (Basic)", hex: "#000000", url: "" },
-            { name: "White (Basic)", hex: "#FFFFFF", url: "" },
-            { name: "Red (Basic)", hex: "#EE2737", url: "" },
-            { name: "Blue (Basic)", hex: "#005EB8", url: "" },
-            { name: "Green (Basic)", hex: "#009639", url: "" },
-            { name: "Orange (Basic)", hex: "#FF671F", url: "" },
-            { name: "Yellow (Basic)", hex: "#FFCD00", url: "" },
-            { name: "Gray (Matte)", hex: "#888B8D", url: "" },
-            { name: "Ivory White (Matte)", hex: "#F2F0EB", url: "" },
-            { name: "Silk Gold", hex: "#D4AF37", url: "" },
-            { name: "Silk Silver", hex: "#C0C0C0", url: "" },
-            { name: "Silk Bronze", hex: "#CD7F32", url: "" }
+            { name: "Black (Basic)", hex: "#000000" },
+            { name: "White (Basic)", hex: "#FFFFFF" },
+            { name: "Red (Basic)", hex: "#EE2737" },
+            { name: "Blue (Basic)", hex: "#005EB8" },
+            { name: "Green (Basic)", hex: "#009639" },
+            { name: "Orange (Basic)", hex: "#FF671F" },
+            { name: "Yellow (Basic)", hex: "#FFCD00" },
+            { name: "Gray (Matte)", hex: "#888B8D" },
+            { name: "Ivory White (Matte)", hex: "#F2F0EB" },
+            { name: "Silk Gold", hex: "#D4AF37" },
+            { name: "Silk Silver", hex: "#C0C0C0" },
+            { name: "Silk Bronze", hex: "#CD7F32" },
+            { name: "Rainbow (Silk)", hex: "linear-gradient(45deg, red, blue, green)" }
         ];
 
         document.getElementById('mono_card').value = localStorage.getItem('dry_mono') || "";
@@ -184,6 +185,8 @@
         renderHistory();
 
         function saveMono() { localStorage.setItem('dry_mono', document.getElementById('mono_card').value); }
+
+        function saveColorUrl(idx, url) { localStorage.setItem('dry_col_' + idx, url); }
 
         function updateZSUDisplay() {
             let total = localStorage.getItem('total_zsu_donated') || 0;
@@ -198,7 +201,9 @@
         }
 
         function renderColors() {
-            let html = bambuColors.map((c, i) => `
+            let html = bambuColors.map((c, i) => {
+                let savedUrl = localStorage.getItem('dry_col_' + i) || "";
+                return `
                 <div class="color-item">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
                         <div style="display:flex; align-items:center;">
@@ -207,9 +212,10 @@
                         </div>
                         <input type="checkbox" class="color-check" data-name="${c.name}" data-index="${i}">
                     </div>
-                    <input type="text" class="col-link" id="link-${i}" placeholder="Посилання на колір" style="font-size:11px; padding:8px; border-radius:8px;">
+                    <input type="text" class="col-link" id="link-${i}" placeholder="Посилання на фото" value="${savedUrl}" oninput="saveColorUrl(${i}, this.value)" style="font-size:11px; padding:8px; border-radius:8px;">
                 </div>
-            `).join('');
+                `;
+            }).join('');
             document.getElementById('color-list-container').innerHTML = html;
         }
 
@@ -229,7 +235,6 @@
             let el = (pwr / 1000) * t * 4.32;
             let net = (w * (plastic / 1000)) + el + (t * 5); 
             let total = (net * (1 + scrap / 100) * (1 + markup / 100)) + pack + zsu;
-            
             document.getElementById('res').innerText = Math.round(total) + " ₴";
         }
 
@@ -237,13 +242,13 @@
             let res = document.getElementById('res').innerText;
             let card = document.getElementById('mono_card').value;
             let zsu = parseInt(document.getElementById('zsu_amount').value);
-            let name = document.getElementById('p1_name').value || "Деталь";
+            let name = document.getElementById('p1_name').value || "Виріб";
             let ship = document.getElementById('shipping').value;
             let time = document.getElementById('deadline').value;
+            let isPacked = document.getElementById('pack_check').checked ? "Так" : "Ні";
             
             if(!document.getElementById('w').value) return tg.showAlert("Введи вагу!");
 
-            // Кольори з посиланнями
             let selectedColors = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
                 let idx = el.getAttribute('data-index');
@@ -253,12 +258,11 @@
             });
             let colorText = selectedColors.length > 0 ? `\n🎨 Колір:\n${selectedColors.join('\n')}` : "";
 
-            // Оновлення статистики ЗСУ
             let currentTotal = parseInt(localStorage.getItem('total_zsu_donated') || 0);
             let newTotal = currentTotal + zsu;
             if (zsu > 0) { localStorage.setItem('total_zsu_donated', newTotal); updateZSUDisplay(); }
 
-            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colorText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${newTotal} ₴\n\n🛠 Дякуємо за замовлення!`;
+            let msg = `🚀 Рахунок Dryguny:\n📦 Виріб: ${name}${colorText}\n📅 Термін: ${time}\n🚚 Доставка: ${ship}\n📦 Пакування: ${isPacked}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}${card ? '\n💳 Карта: ' + card : ''}\n\n📊 Разом зібрано на ЗСУ: ${newTotal} ₴\n\n🛠 Дякуємо за замовлення!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.HapticFeedback.notificationOccurred('success');
