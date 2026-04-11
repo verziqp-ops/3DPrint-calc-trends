@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v10</title>
+    <title>Dryguny Hub v11</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --purp: #bb86fc; --cyan: #03dac6; --bg: #0b0b0e; }
@@ -64,10 +64,12 @@
             border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 15px;
         }
 
-        .zsu-stats {
-            background: rgba(3, 218, 198, 0.1); border: 1px dashed var(--cyan);
-            border-radius: 15px; padding: 10px; margin-top: 20px; text-align: center;
+        /* БЛОК ДОНАТІВ */
+        .zsu-total-card {
+            background: rgba(3, 218, 198, 0.1); border: 1px solid var(--cyan);
+            border-radius: 18px; padding: 15px; margin-top: 20px; text-align: center;
         }
+        .zsu-val { font-size: 24px; font-weight: 900; color: var(--cyan); display: block; }
 
         .history-item { 
             background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 8px;
@@ -75,7 +77,7 @@
         }
 
         .slider-range { width: 100%; margin: 10px 0; accent-color: var(--purp); }
-        .reset-link { color: #ff4444; font-size: 10px; text-decoration: underline; cursor: pointer; margin-top: 5px; display: inline-block; }
+        .reset-btn { color: #ff4444; font-size: 10px; background: none; border: none; text-decoration: underline; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -88,11 +90,12 @@
     <div id="calc" class="card active">
         <div class="price-tag" id="res">0 ₴</div>
         
-        <label>⚙️ Основні дані</label>
-        <input type="text" id="p1_name" placeholder="Назва моделі" style="margin-bottom: 10px;">
+        <label>📝 Назва моделі</label>
+        <input type="text" id="p1_name" placeholder="Введіть назву тут...">
+
         <div class="row">
-            <div style="flex: 1.5;">
-                <label>💰 Ціна пластику (грн/кг)</label>
+            <div>
+                <label>💰 Пластик (грн/кг)</label>
                 <input type="number" id="plast_price" value="850" oninput="calc()">
             </div>
         </div>
@@ -130,7 +133,7 @@
             <option value="100">100 ₴</option>
         </select>
 
-        <label>🚚 Деталі замовлення</label>
+        <label>🚚 Деталі</label>
         <div class="row">
             <select id="printer" onchange="calc()">
                 <option value="150">Bambu A1</option>
@@ -149,10 +152,10 @@
 
         <button class="main-btn" onclick="copyCheck()">📋 КОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
 
-        <div class="zsu-stats">
-            <span style="font-size: 12px; color: var(--cyan);">💙 Разом на ЗСУ:</span><br>
-            <b id="zsu_total_display" style="font-size: 20px;">0 ₴</b><br>
-            <span class="reset-link" onclick="resetZSU()">обнулити суму</span>
+        <div class="zsu-total-card">
+            <span style="font-size: 11px; opacity: 0.8;">ЗАГАЛЬНИЙ ЗБІР НА ЗСУ:</span>
+            <span class="zsu-val" id="zsu_total_display">0 ₴</span>
+            <button class="reset-btn" onclick="resetZSU()">обнулити збір</button>
         </div>
 
         <div id="history-list" style="margin-top:25px"></div>
@@ -178,20 +181,17 @@
             { name: "CF Lava Gray", url: "" }
         ];
 
-        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v10') || "";
+        document.getElementById('mono_card').value = localStorage.getItem('dry_mono_v11') || "";
         updateZSUTotalDisplay();
         renderColors();
         renderHistory();
 
-        function saveMono() { localStorage.setItem('dry_mono_v10', document.getElementById('mono_card').value); }
+        function saveMono() { localStorage.setItem('dry_mono_v11', document.getElementById('mono_card').value); }
 
         function renderColors() {
-            let html = drygunyColors.map((c, i) => `
+            let html = drygunyColors.map((c) => `
                 <div class="switch-box">
-                    <div style="display:flex; flex-direction:column">
-                        <span style="font-weight:bold">${c.name}</span>
-                        <small style="color:#666; font-size:10px">${c.url || 'фото немає'}</small>
-                    </div>
+                    <span>${c.name}</span>
                     <label class="switch">
                         <input type="checkbox" class="color-check" data-name="${c.name}">
                         <span class="slider"></span>
@@ -228,34 +228,32 @@
             let col = [];
             document.querySelectorAll('.color-check:checked').forEach(el => col.push(el.getAttribute('data-name')));
 
-            let msg = `🚀 Чек Dryguny:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
+            let msg = `🚀 Чек:\n📦 Виріб: ${name}\n🎨 Колір: ${col.join(', ') || 'уточнюється'}\n🚚 Доставка: ${ship}\n\n💰 Сума: ${res}${zsu > 0 ? '\n🇺🇦 Донат на ЗСУ: ' + zsu + ' ₴' : ''}\n💳 Карта: ${card}\n\n🛠 Дякуємо!`;
             
             navigator.clipboard.writeText(msg).then(() => {
                 tg.showAlert("Чек скопійовано!");
-                if(zsu > 0) addZSUTotal(zsu);
+                if(zsu > 0) {
+                    let current = parseInt(localStorage.getItem('dry_zsu_total_v11') || 0);
+                    localStorage.setItem('dry_zsu_total_v11', current + zsu);
+                    updateZSUTotalDisplay();
+                }
                 saveHistory();
             });
         }
 
-        function addZSUTotal(amount) {
-            let current = parseInt(localStorage.getItem('dry_zsu_total') || 0);
-            localStorage.setItem('dry_zsu_total', current + amount);
-            updateZSUTotalDisplay();
-        }
-
         function resetZSU() {
             if(confirm("Обнулити загальну суму донатів?")) {
-                localStorage.setItem('dry_zsu_total', 0);
+                localStorage.setItem('dry_zsu_total_v11', 0);
                 updateZSUTotalDisplay();
             }
         }
 
         function updateZSUTotalDisplay() {
-            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total') || 0) + " ₴";
+            document.getElementById('zsu_total_display').innerText = (localStorage.getItem('dry_zsu_total_v11') || 0) + " ₴";
         }
 
         function saveHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v10') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
             let data = {
                 name: document.getElementById('p1_name').value,
                 price: document.getElementById('res').innerText,
@@ -269,12 +267,12 @@
                 date: new Date().toLocaleTimeString()
             };
             h.unshift(data); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_h_v10', JSON.stringify(h));
+            localStorage.setItem('dry_h_v11', JSON.stringify(h));
             renderHistory();
         }
 
         function restore(i) {
-            let h = JSON.parse(localStorage.getItem('dry_h_v10') || '[]');
+            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
             let d = h[i];
             document.getElementById('p1_name').value = d.name;
             document.getElementById('w').value = d.w;
@@ -289,8 +287,8 @@
         }
 
         function renderHistory() {
-            let h = JSON.parse(localStorage.getItem('dry_h_v10') || '[]');
-            document.getElementById('history-list').innerHTML = `<label>📜 Останні розрахунки</label>` + 
+            let h = JSON.parse(localStorage.getItem('dry_h_v11') || '[]');
+            document.getElementById('history-list').innerHTML = `<label>📜 Останні чеки</label>` + 
                 h.map((x, i) => `<div class="history-item" onclick="restore(${i})"><span>${x.name || 'Без назви'}</span><b>${x.price}</b></div>`).join('');
         }
 
@@ -304,10 +302,9 @@
         function copyStock() {
             let sel = [];
             document.querySelectorAll('.color-check:checked').forEach(el => {
-                let colorData = drygunyColors.find(c => c.name === el.getAttribute('data-name'));
-                sel.push(`✅ ${colorData.name}\n🔗 Фото: ${colorData.url || 'за запитом'}`);
+                sel.push(`✅ ${el.getAttribute('data-name')}`);
             });
-            navigator.clipboard.writeText(`🎨 Dryguny — Наявність:\n\n${sel.join('\n\n')}`).then(() => tg.showAlert("Скопійовано!"));
+            navigator.clipboard.writeText(`🎨Наявність:\n\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
         }
     </script>
 </body>
