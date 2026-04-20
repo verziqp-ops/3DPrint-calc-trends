@@ -3,57 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Hub v21.0</title>
+    <title>Dryguny Hub Final</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --accent: #ff5722; --bg: #f8f7f2; --card-bg: #ffffff; --text: #333; --gray: #888; --input: #fafafa; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .price-banner { background: #222; color: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 15px; position: sticky; top: 10px; z-index: 100; box-sizing: border-box; }
-        .price-tag { font-size: 42px; font-weight: 900; color: var(--accent); margin: 5px 0; }
-        .sub-cost { font-size: 12px; opacity: 0.7; }
-        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; width: 100%; max-width: 400px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid rgba(128,128,128,0.1); }
-        .section-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 15px; display: block; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        label { display: block; margin: 10px 0 5px 2px; font-size: 11px; color: var(--gray); text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.2); background: var(--input); color: var(--text); font-size: 16px; outline: none; }
+        :root { --accent: #ff5722; --bg: #f8f7f2; --card-bg: #ffffff; --text: #222; --gray: #888; --input: #f9f9f9; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; }
+        
+        .price-banner { 
+            background: #1a1a1a; color: white; width: 100%; max-width: 420px; 
+            padding: 20px; border-radius: 22px; text-align: center; margin: 0 auto 15px; 
+            position: sticky; top: 10px; z-index: 100; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+        .price-tag { font-size: 46px; font-weight: 900; color: var(--accent); margin: 2px 0; }
+        .profit-line { font-size: 12px; color: #03dac6; font-weight: bold; }
+
+        .card { background: var(--card-bg); border-radius: 20px; padding: 18px; width: 100%; max-width: 420px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin: 0 auto 15px; border: 1px solid rgba(128,128,128,0.1); }
+        .section-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        
+        .tabs { display: flex; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 4px; margin: 0 auto 15px; width: 100%; max-width: 420px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; font-size: 12px; }
+        .tab-btn.active { background: var(--accent); color: white; }
+
+        label { display: block; margin: 10px 0 5px 2px; font-size: 11px; color: var(--gray); text-transform: uppercase; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.15); background: var(--input); color: var(--text); font-size: 16px; outline: none; box-sizing: border-box; }
+        
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
         .row > div { flex: 1; }
-        .mat-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-        .mat-btn { flex: 1; min-width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; background: white; font-size: 12px; cursor: pointer; }
-        .mat-btn.active { border-color: var(--accent); color: var(--accent); font-weight: bold; }
-        .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-weight: 800; cursor: pointer; }
-        .accent-text { color: var(--accent); font-weight: bold; }
+
+        .switch-box { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,0.05); }
+        .switch { position: relative; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 87, 34, 0.2); }
+        .history-item { padding: 10px; background: #f3f3f3; border-radius: 12px; margin-bottom: 5px; display: flex; justify-content: space-between; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="price-banner">
-        <div class="sub-cost">ЦІНА ПРОДАЖУ</div>
-        <div id="res" class="price-tag">0 ₴</div>
-        <div class="sub-cost">Собівартість: <span id="cost_res">0</span> ₴ | Прибуток: <span id="profit_res">0</span> ₴</div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('calc', this)">📊 РОЗРАХУНОК</button>
+        <button class="tab-btn" onclick="openTab('colors', this)">🎨 КОЛЬОРИ</button>
+        <button class="tab-btn" onclick="openTab('history', this)">📜 ІСТОРІЯ</button>
     </div>
 
-    <div class="card" style="display: block;">
-        <span class="section-title">🧵 Матеріал та Вага</span>
-        <div class="mat-btns">
-            <button class="mat-btn active" onclick="setMat('PLA', 850, this)">PLA</button>
-            <button class="mat-btn" onclick="setMat('PETG', 750, this)">PETG</button>
-            <button class="mat-btn" onclick="setMat('Silk', 1100, this)">Silk</button>
-            <button class="mat-btn" onclick="setMat('Свій', 0, this)">Свій</button>
-        </div>
+    <div class="price-banner">
+        <div id="res" class="price-tag">0 ₴</div>
+        <div class="profit-line">Прибуток: +<span id="profit_val">0</span> ₴</div>
+    </div>
+
+    <div id="calc" class="card" style="display:block">
+        <span class="section-title">📦 Дані моделі</span>
+        <input type="text" id="p_name" placeholder="Назва моделі">
+        
         <div class="row">
             <div>
                 <label>Вага (г)</label>
                 <input type="number" id="w" value="0" oninput="calc()">
             </div>
             <div>
-                <label>Ціна пластику (₴/кг)</label>
-                <input type="number" id="plast_price" value="850" oninput="calc()">
+                <label>Пластик (₴/кг)</label>
+                <input type="number" id="p_price" value="850" oninput="calc()">
             </div>
         </div>
-        <label>Брак та підтримки: <span class="accent-text" id="bLabel">10%</span></label>
-        <input type="range" id="b" min="0" max="30" value="10" style="width:100%; accent-color:var(--accent)" oninput="calc()">
 
-        <span class="section-title" style="margin-top:20px">⚡ Електрика (Bambu A1)</span>
         <div class="row">
             <div>
                 <label>Години</label>
@@ -64,46 +81,129 @@
                 <input type="number" id="t_m" value="0" oninput="calc()">
             </div>
         </div>
+
+        <span class="section-title" style="margin-top:15px">⚙️ Налаштування</span>
         <div class="row">
             <div>
-                <label>Потужність (Вт)</label>
-                <input type="number" id="pwr" value="200" oninput="calc()">
+                <label>Принтер</label>
+                <select id="printer" onchange="calc()">
+                    <option value="150">Bambu A1</option>
+                    <option value="80">A1 Mini</option>
+                </select>
             </div>
             <div>
-                <label>Тариф (₴/кВт)</label>
-                <input type="number" id="tarif" value="4.32" oninput="calc()">
+                <label>Кольорів</label>
+                <input type="number" id="c_count" value="1" min="1" oninput="calc()">
             </div>
         </div>
 
-        <span class="section-title" style="margin-top:20px">🛠️ Додатково</span>
-        <div class="row">
-            <div>
-                <label>Фурнітура (₴)</label>
-                <input type="number" id="furn" value="0" placeholder="+ очі, магніти" oninput="calc()">
-            </div>
-            <div>
-                <label>Пост-обробка (₴)</label>
-                <input type="number" id="post" value="0" oninput="calc()">
-            </div>
+        <label>Націнка: <b id="mLabel" style="color:var(--accent)">100%</b></label>
+        <input type="range" id="m" min="0" max="400" value="100" style="width:100%; accent-color:var(--accent); margin-bottom:15px" oninput="calc()">
+
+        <div class="switch-box">
+            <span>🚀 Терміново (+15%)</span>
+            <label class="switch"><input type="checkbox" id="urgent" onchange="calc()"><span class="slider"></span></label>
         </div>
 
-        <span class="section-title" style="margin-top:20px">📈 Бізнес</span>
-        <label>Націнка (Маржа): <span class="accent-text" id="mLabel">100%</span></label>
-        <input type="range" id="m" min="0" max="500" value="100" style="width:100%; accent-color:var(--accent)" oninput="calc()">
-        
-        <div class="row" style="margin-top:10px">
-            <div>
-                <label>Кількість (шт)</label>
-                <input type="number" id="qty" value="1" oninput="calc()">
-            </div>
+        <div class="switch-box">
+            <span>📦 Пакування (40 ₴)</span>
+            <label class="switch"><input type="checkbox" id="pack" onchange="calc()"><span class="slider"></span></label>
         </div>
 
-        <button class="main-btn" style="margin-top:20px" onclick="copyResult()">📋 СКОПІЮВАТИ ЧЕК</button>
+        <label>🇺🇦 Донат ЗСУ (₴)</label>
+        <input type="number" id="zsu" value="0" oninput="calc()">
+
+        <button class="main-btn" onclick="copyCheck()" style="margin-top:20px">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+    </div>
+
+    <div id="colors" class="card" style="display:none">
+        <span class="section-title">🎨 Наявність кольорів</span>
+        <div id="color-list"></div>
+        <button class="main-btn" onclick="copyStock()" style="background:#03dac6; color:#000; margin-top:15px">📋 КОПІЮВАТИ СПИСОК</button>
+    </div>
+
+    <div id="history" class="card" style="display:none">
+        <span class="section-title">📜 Останні 5 чеків</span>
+        <div id="h-list"></div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+
+        const colorNames = ["Basic Purple", "Basic Pink", "Basic Green", "Basic Black", "Basic White", "Silk Gold", "Silk Silver"];
+
+        function calc() {
+            let w = parseFloat(document.getElementById('w').value) || 0;
+            let p_price = parseFloat(document.getElementById('p_price').value) || 0;
+            let h = parseFloat(document.getElementById('t_h').value) || 0;
+            let min = parseFloat(document.getElementById('t_m').value) || 0;
+            let c_count = parseInt(document.getElementById('c_count').value) || 1;
+            let m = document.getElementById('m').value;
+            let pwr = parseInt(document.getElementById('printer').value);
+            
+            let time = h + (min/60);
+            let pack = document.getElementById('pack').checked ? 40 : 0;
+            let urgent = document.getElementById('urgent').checked ? 1.15 : 1;
+            let zsu = parseInt(document.getElementById('zsu').value) || 0;
+
+            // Собівартість: Пластик + Світло (4.32грн) + Аморт (4грн/год) + Мультиколір (10грн зміна)
+            let multiColorCost = (c_count - 1) * 10;
+            let cost = (w * (p_price/1000)) + (time * 4) + ((pwr/1000) * time * 4.32) + multiColorCost;
+            
+            let sell = (cost * (1 + m/100) * 1.05) + pack + zsu;
+            sell *= urgent;
+
+            document.getElementById('res').innerText = Math.round(sell) + " ₴";
+            document.getElementById('profit_val').innerText = Math.round(sell - cost - zsu);
+            document.getElementById('mLabel').innerText = m + "%";
+        }
+
+        function copyCheck() {
+            let name = document.getElementById('p_name').value || "Модель";
+            let res = document.getElementById('res').innerText;
+            let zsu = document.getElementById('zsu').value;
+            
+            let text = `📦 Dryguny Hub\n───────────────\n🤖 Виріб: ${name}\n💰 До сплати: ${res}${zsu > 0 ? '\n🇺🇦 Донат ЗСУ включено' : ''}\n───────────────\nДякуємо за замовлення!`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                tg.showAlert("Чек скопійовано!");
+                saveH(name, res);
+            });
+        }
+
+        function saveH(n, p) {
+            let h = JSON.parse(localStorage.getItem('dry_final') || '[]');
+            h.unshift({n, p}); if(h.length > 5) h.pop();
+            localStorage.setItem('dry_final', JSON.stringify(h));
+            renderH();
+        }
+
+        function renderH() {
+            let h = JSON.parse(localStorage.getItem('dry_final') || '[]');
+            document.getElementById('h-list').innerHTML = h.map(x => `<div class="history-item"><span>${x.n}</span><b>${x.p}</b></div>`).join('');
+        }
+
+        function renderColors() {
+            document.getElementById('color-list').innerHTML = colorNames.map(c => `<div class="switch-box"><span>${c}</span><label class="switch"><input type="checkbox" class="c-check" data-name="${c}"><span class="slider"></span></label></div>`).join('');
+        }
+
+        function copyStock() {
+            let sel = []; document.querySelectorAll('.c-check:checked').forEach(e => sel.push("✅ " + e.dataset.name));
+            navigator.clipboard.writeText(`🎨 Наявність кольорів:\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
+        }
+
+        function openTab(id, btn) {
+            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).style.display = 'block';
+            btn.classList.add('active');
+        }
+
+        window.onload = () => { renderColors(); renderH(); calc(); };
+    </script>
+</body>
+</html>
 
         function setMat(name, price, btn) {
             document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
