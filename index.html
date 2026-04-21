@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Pro v29.0</title>
+    <title>Dryguny Pro v30.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
@@ -16,13 +16,11 @@
             --gray: #777; --input: #262626; --border: rgba(255,255,255,0.05);
         }
         
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; transition: 0.4s; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; transition: 0.4s; overflow-x: hidden; }
         
-        /* Кнопка теми та заголовок */
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-size: 18px; color: var(--text); }
 
-        /* Чорне поле зверху - як на скриншоті */
         .price-banner { 
             background: var(--banner-bg); color: white; width: 100%; max-width: 440px; 
             padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; 
@@ -40,23 +38,19 @@
         .stat-item span { display: block; color: var(--gray); font-size: 9px; margin-bottom: 4px; text-transform: uppercase; }
         .orange-text { color: var(--accent); font-weight: 800; }
 
-        /* Картки та секції */
-        .card { background: var(--card-bg); border-radius: 24px; padding: 22px; width: 100%; max-width: 440px; box-sizing: border-box; margin: 0 auto 20px; border: 1px solid var(--border); box-shadow: 0 4px 15px var(--border); }
+        .card { background: var(--card-bg); border-radius: 24px; padding: 22px; width: 100%; max-width: 440px; box-sizing: border-box; margin: 0 auto 20px; border: 1px solid var(--border); }
         .section-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
         
-        /* Таби */
         .tabs { display: flex; background: var(--input); border-radius: 16px; padding: 5px; margin: 0 auto 20px; width: 100%; max-width: 440px; }
         .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; }
         .tab-btn.active { background: var(--accent); color: white; }
 
-        /* Поля вводу */
         label { display: block; margin: 15px 0 6px 4px; font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
         input, select { width: 100%; padding: 14px; border-radius: 16px; border: none; background: var(--input); color: var(--text); font-size: 16px; outline: none; box-sizing: border-box; }
         
         .row { display: flex; gap: 15px; margin-bottom: 15px; }
         .row > div { flex: 1; }
 
-        /* Перемикачі */
         .switch-box { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -65,14 +59,13 @@
         input:checked + .slider { background: var(--accent); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        .main-btn { background: var(--accent); color: white; border: none; padding: 20px; border-radius: 20px; width: 100%; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 8px 20px rgba(255,87,34,0.3); }
+        .main-btn { background: var(--accent); color: white; border: none; padding: 20px; border-radius: 20px; width: 100%; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; }
         
-        /* Слайдер націнки */
-        input[type=range] { -webkit-appearance: none; background: var(--input); height: 8px; border-radius: 5px; margin: 15px 0; }
+        input[type=range] { -webkit-appearance: none; background: var(--input); height: 8px; border-radius: 5px; margin: 15px 0; width: 100%; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 3px solid var(--card-bg); }
     </style>
 </head>
-<body>
+<body class="dark">
 
     <div class="header-box">
         <div style="font-weight: 900; font-size: 20px; letter-spacing: -0.5px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
@@ -89,7 +82,7 @@
                 <b id="total_cost">0</b> ₴
             </div>
             <div class="stat-item">
-                <span>Націнка (Маржа)</span>
+                <span>Націнка</span>
                 <b class="orange-text" id="m_val">0</b> <span class="orange-text">₴</span>
             </div>
             <div class="stat-item">
@@ -110,7 +103,7 @@
     </div>
 
     <div id="calc" class="card" style="display:block">
-        <div class="section-title">📦 ПАРАМЕТРИ МАТЕРІАЛУ</div>
+        <div class="section-title">📦 ПАРАМЕТРИ МОДЕЛІ</div>
         <input type="text" id="p_name" placeholder="Назва моделі">
         
         <div class="row">
@@ -119,147 +112,12 @@
                 <input type="number" id="w" value="0" oninput="calc()">
             </div>
             <div>
-                <label>Брак/Відходи (%)</label>
-                <input type="number" id="fail" value="10" oninput="calc()">
+                <label>Брак (%)</label>
+                <input type="number" id="fail" value="5" oninput="calc()">
             </div>
         </div>
-        <label>Ціна пластику (₴/кг)</label>
-        <input type="number" id="p_price" value="850" oninput="calc()">
 
-        <div class="section-title" style="margin-top:30px">⚙️ АМОРТИЗАЦІЯ ТА ПРАЦЯ</div>
         <div class="row">
-            <div>
-                <label>Ціна принтера (₴)</label>
-                <input type="number" id="p_cost" value="15000" oninput="calc()">
-            </div>
-            <div>
-                <label>Ресурс (год)</label>
-                <input type="number" id="p_res" value="5000" oninput="calc()">
-            </div>
-        </div>
-        <div class="row">
-            <div>
-                <label>Ставка (₴/год)</label>
-                <input type="number" id="op_rate" value="150" oninput="calc()">
-            </div>
-            <div>
-                <label>Потужність (Вт)</label>
-                <input type="number" id="pwr" value="150" oninput="calc()">
-            </div>
-        </div>
-
-        <div class="section-title" style="margin-top:30px">⏱️ ЧАС ТА ПІДГОТОВКА</div>
-        <div class="row">
-            <div>
-                <label>Годин друку</label>
-                <input type="number" id="t_h" value="0" oninput="calc()">
-            </div>
-            <div>
-                <label>Хвилин друку</label>
-                <input type="number" id="t_m" value="0" oninput="calc()">
-            </div>
-        </div>
-        <div class="row">
-            <div>
-                <label>Підготовка (хв)</label>
-                <input type="number" id="prep" value="15" oninput="calc()">
-            </div>
-            <div>
-                <label>Постобробка (хв)</label>
-                <input type="number" id="post" value="15" oninput="calc()">
-            </div>
-        </div>
-
-        <div class="section-title" style="margin-top:30px">📈 БІЗНЕС ТА НАЦІНКА</div>
-        <label>Націнка: <span class="orange-text" id="mLabel">100%</span></label>
-        <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
-
-        <div class="switch-box">
-            <span style="font-size:12px; color:var(--gray)">🚀 ТЕРМІНОВО (+15%)</span>
-            <label class="switch"><input type="checkbox" id="urgent" onchange="calc()"><span class="slider"></span></label>
-        </div>
-
-        <div class="switch-box">
-            <span style="font-size:12px; color:var(--gray)">📦 ПАКУВАННЯ (40 ₴)</span>
-            <label class="switch"><input type="checkbox" id="pack" onchange="calc()"><span class="slider"></span></label>
-        </div>
-
-        <label>🇺🇦 ДОНАТ ЗСУ</label>
-        <input type="number" id="zsu" value="0" oninput="calc()">
-
-        <button class="main-btn" onclick="copyCheck()">СКОПІЮВАТИ ЧЕК</button>
-    </div>
-
-    <div id="colors" class="card" style="display:none">...</div>
-    <div id="history" class="card" style="display:none">...</div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-
-        function calc() {
-            // Отримуємо значення
-            let w = parseFloat(document.getElementById('w').value) || 0;
-            let fail = (parseFloat(document.getElementById('fail').value) || 0) / 100;
-            let p_price = parseFloat(document.getElementById('p_price').value) || 0;
-            
-            let p_cost = parseFloat(document.getElementById('p_cost').value) || 0;
-            let p_res = parseFloat(document.getElementById('p_res').value) || 1;
-            let op_rate = parseFloat(document.getElementById('op_rate').value) || 0;
-            let pwr = parseFloat(document.getElementById('pwr').value) || 0;
-
-            let h = parseFloat(document.getElementById('t_h').value) || 0;
-            let min = parseFloat(document.getElementById('t_m').value) || 0;
-            let prep = parseFloat(document.getElementById('prep').value) || 0;
-            let post = parseFloat(document.getElementById('post').value) || 0;
-            
-            let m = document.getElementById('m').value;
-            let pack = document.getElementById('pack').checked ? 40 : 0;
-            let urgent = document.getElementById('urgent').checked ? 1.15 : 1;
-            let zsu = parseInt(document.getElementById('zsu').value) || 0;
-
-            let totalTimeH = h + (min / 60);
-            let workerTimeH = (prep + post) / 60;
-
-            // Розрахунок витрат
-            let costPlast = (w * (1 + fail)) * (p_price / 1000);
-            let costElec = (pwr / 1000) * totalTimeH * 4.32; // Тариф 4.32 як на скрині
-            let costAmort = (p_cost / p_res) * totalTimeH;
-            let costWork = op_rate * workerTimeH;
-
-            let totalCost = costPlast + costElec + costAmort + costWork;
-            
-            // Фінальна ціна
-            let marginVal = totalCost * (m / 100);
-            let sellPrice = (totalCost + marginVal + pack + zsu) * urgent;
-            let profit = sellPrice - totalCost - zsu;
-
-            // Вивід у чорне поле
-            document.getElementById('res').innerText = Math.round(sellPrice) + " ₴";
-            document.getElementById('total_cost').innerText = Math.round(totalCost);
-            document.getElementById('m_val').innerText = Math.round(marginVal);
-            document.getElementById('profit_val').innerText = Math.round(profit);
-            document.getElementById('plast_val').innerText = Math.round(costPlast);
-            document.getElementById('mLabel').innerText = m + "%";
-        }
-
-        function openTab(id, btn) {
-            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).style.display = 'block';
-            btn.classList.add('active');
-        }
-
-        function copyCheck() {
-            let n = document.getElementById('p_name').value || "Виріб";
-            let res = document.getElementById('res').innerText;
-            navigator.clipboard.writeText(`📦 Dryguny 3D\n🤖 Виріб: ${n}\n💰 До сплати: ${res}\nДякуємо!`).then(() => tg.showAlert("Чек скопійовано!"));
-        }
-
-        window.onload = calc;
-    </script>
-</body>
-</html>
             <div>
                 <label>Пластик (₴/кг)</label>
                 <input type="number" id="p_price" value="850" oninput="calc()">
@@ -270,7 +128,7 @@
             </div>
         </div>
 
-        <span class="section-title" style="margin-top:15px">⏱️ ЧАС ТА ПРИНТЕР</span>
+        <div class="section-title" style="margin-top:30px">⏱️ ЧАС ТА ПРИНТЕР</div>
         <div class="row">
             <div>
                 <label>Години</label>
@@ -288,111 +146,112 @@
             </div>
             <div>
                 <label>Аморт. (₴/год)</label>
-                <input type="number" id="amort" value="5" oninput="calc()">
+                <input type="number" id="amort_h" value="5" oninput="calc()">
             </div>
         </div>
 
-        <span class="section-title" style="margin-top:15px">📈 БІЗНЕС</span>
+        <div class="section-title" style="margin-top:30px">🎨 ДОДАТКОВІ ПОСЛУГИ</div>
+        <div class="row">
+            <div>
+                <label>Моделювання (год)</label>
+                <input type="number" id="model_h" value="0" oninput="calc()">
+            </div>
+            <div>
+                <label>Ціна год. (₴)</label>
+                <input type="number" id="model_rate" value="200" oninput="calc()">
+            </div>
+        </div>
+        <label>Пост-обробка</label>
+        <select id="post_proc" onchange="calc()">
+            <option value="0">Немає</option>
+            <option value="50">Легка (50 ₴)</option>
+            <option value="150">Середня (150 ₴)</option>
+            <option value="300">Складна (300 ₴)</option>
+        </select>
+
+        <div class="section-title" style="margin-top:30px">📈 БІЗНЕС</div>
         <label>Націнка: <span class="orange-text" id="mLabel">100%</span></label>
-        <input type="range" id="m" min="0" max="500" value="100" style="width:100%; accent-color:var(--accent); margin-bottom:10px" oninput="calc()">
+        <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
+
+        <label>Ручна знижка: <span id="dLabel">0%</span></label>
+        <input type="range" id="discount" min="0" max="50" value="0" oninput="calc()">
 
         <div class="switch-box">
-            <span style="color:var(--gray); font-size: 11px; text-transform: uppercase;">🚀 Терміново (+15%)</span>
+            <span>🚀 ТЕРМІНОВО (+15%)</span>
             <label class="switch"><input type="checkbox" id="urgent" onchange="calc()"><span class="slider"></span></label>
         </div>
 
         <div class="switch-box">
-            <span style="color:var(--gray); font-size: 11px; text-transform: uppercase;">📦 Пакування (40 ₴)</span>
+            <span>📦 ПАКУВАННЯ (20 ₴)</span>
             <label class="switch"><input type="checkbox" id="pack" onchange="calc()"><span class="slider"></span></label>
         </div>
-
-        <label>🇺🇦 Донат ЗСУ</label>
-        <input type="number" id="zsu" value="0" oninput="calc()">
 
         <button class="main-btn" onclick="copyCheck()">СКОПІЮВАТИ ЧЕК</button>
     </div>
 
     <div id="colors" class="card" style="display:none">
-        <span class="section-title">🎨 НАЯВНІСТЬ</span>
-        <div id="color-list"></div>
-        <button class="main-btn" onclick="copyStock()" style="background:#444">СКОПІЮВАТИ СПИСОК</button>
+        <div class="section-title">🎨 НАЯВНІ КОЛЬОРИ</div>
+        <p style="color: var(--gray); text-align: center;">Тут буде список ваших філаментів</p>
     </div>
 
     <div id="history" class="card" style="display:none">
-        <span class="section-title">📜 ОСТАННІ 5</span>
-        <div id="h-list"></div>
+        <div class="section-title">📜 ОСТАННІ ЧЕКИ</div>
+        <div id="history-list"></div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const colorNames = ["Purple", "Pink", "Green", "Black", "White", "Gold", "Silver"];
-
         function calc() {
+            // Матеріал
             let w = parseFloat(document.getElementById('w').value) || 0;
             let fail = (parseFloat(document.getElementById('fail').value) || 0) / 100;
             let p_price = parseFloat(document.getElementById('p_price').value) || 0;
+            let qty = parseFloat(document.getElementById('qty').value) || 1;
+            
+            // Час та Електрика
             let h = parseFloat(document.getElementById('t_h').value) || 0;
             let min = parseFloat(document.getElementById('t_m').value) || 0;
             let pwr = parseFloat(document.getElementById('pwr').value) || 0;
-            let am_rate = parseFloat(document.getElementById('amort').value) || 0;
-            let qty = parseInt(document.getElementById('qty').value) || 1;
-            let m = document.getElementById('m').value;
-            let pack = document.getElementById('pack').checked ? 40 : 0;
-            let urgent = document.getElementById('urgent').checked ? 1.15 : 1;
-            let zsu = parseInt(document.getElementById('zsu').value) || 0;
+            let amort_h = parseFloat(document.getElementById('amort_h').value) || 0;
+            let totalTimeH = h + (min / 60);
 
-            let time = h + (min/60);
+            // Додатково
+            let model_h = parseFloat(document.getElementById('model_h').value) || 0;
+            let model_rate = parseFloat(document.getElementById('model_rate').value) || 0;
+            let post_val = parseFloat(document.getElementById('post_proc').value) || 0;
             
-            // Собівартість
-            let plastCost = (w * (1 + fail)) * (p_price/1000);
-            let elecCost = (pwr/1000) * time * 4.32;
-            let amortCost = time * am_rate;
-            let totalCost = (plastCost + elecCost + amortCost) * qty;
+            // Бізнес
+            let m = document.getElementById('m').value;
+            let discount = document.getElementById('discount').value;
+            let pack = document.getElementById('pack').checked ? 20 : 0;
+            let urgent = document.getElementById('urgent').checked ? 1.15 : 1;
 
-            // Націнка та фінал
-            let marginVal = totalCost * (m/100);
-            let sellPrice = (totalCost + marginVal + pack + zsu) * urgent;
-            let profit = sellPrice - totalCost - zsu;
+            // Розрахунок собівартості (на 1 шт)
+            let costPlast = (w * (1 + fail)) * (p_price / 1000);
+            let costElec = (pwr / 1000) * totalTimeH * 4.32; 
+            let costAmort = amort_h * totalTimeH;
+            
+            let singleCost = costPlast + costElec + costAmort + (post_val / qty);
+            let totalCost = (singleCost * qty) + (model_h * model_rate);
 
-            // Вивід
-            document.getElementById('res').innerText = Math.round(sellPrice) + " ₴";
+            // Фінальна ціна
+            let marginVal = totalCost * (m / 100);
+            let basePrice = totalCost + marginVal + (pack * qty);
+            let finalPrice = (basePrice * urgent) * (1 - (discount / 100));
+            
+            let profit = finalPrice - totalCost;
+
+            // Оновлення інтерфейсу
+            document.getElementById('res').innerText = Math.round(finalPrice) + " ₴";
             document.getElementById('total_cost').innerText = Math.round(totalCost);
             document.getElementById('m_val').innerText = Math.round(marginVal);
             document.getElementById('profit_val').innerText = Math.round(profit);
-            document.getElementById('plast_val').innerText = Math.round(plastCost * qty);
+            document.getElementById('plast_val').innerText = Math.round(costPlast * qty);
+            
             document.getElementById('mLabel').innerText = m + "%";
-        }
-
-        function copyCheck() {
-            let n = document.getElementById('p_name').value || "Виріб";
-            let res = document.getElementById('res').innerText;
-            navigator.clipboard.writeText(`📦 Dryguny Hub\n🤖 Виріб: ${n}\n💰 До сплати: ${res}\nДякуємо! 🇺🇦`).then(() => tg.showAlert("Чек скопійовано!"));
-            saveH(n, res);
-        }
-
-        function saveH(n, p) {
-            let h = JSON.parse(localStorage.getItem('dry_v28') || '[]');
-            h.unshift({n, p}); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_v28', JSON.stringify(h));
-            renderH();
-        }
-
-        function renderH() {
-            let h = JSON.parse(localStorage.getItem('dry_v28') || '[]');
-            document.getElementById('h-list').innerHTML = h.map(x => `<div class="history-item"><span>${x.n}</span><b>${x.p}</b></div>`).join('');
-        }
-
-        function renderColors() {
-            document.getElementById('color-list').innerHTML = colorNames.map(c => `
-                <div class="switch-box"><span>${c}</span><label class="switch"><input type="checkbox" class="c-check" data-name="${c}"><span class="slider"></span></label></div>
-            `).join('');
-        }
-
-        function copyStock() {
-            let sel = []; document.querySelectorAll('.c-check:checked').forEach(e => sel.push("✅ " + e.dataset.name));
-            navigator.clipboard.writeText(`🎨 Кольори:\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
+            document.getElementById('dLabel').innerText = discount + "%";
         }
 
         function openTab(id, btn) {
@@ -402,107 +261,19 @@
             btn.classList.add('active');
         }
 
-        window.onload = () => { renderColors(); renderH(); calc(); };
-    </script>
-</body>
-</html>
-
-        <div class="switch-box">
-            <span>📦 Пакування (40 ₴)</span>
-            <label class="switch"><input type="checkbox" id="pack" onchange="calc()"><span class="slider"></span></label>
-        </div>
-
-        <label>🇺🇦 Донат ЗСУ (₴)</label>
-        <input type="number" id="zsu" value="0" oninput="calc()">
-
-        <button class="main-btn" onclick="copyCheck()" style="margin-top:20px">📋 СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
-    </div>
-
-    <div id="colors" class="card" style="display:none">
-        <span class="section-title">🎨 Наявність кольорів</span>
-        <div id="color-list"></div>
-        <button class="main-btn" onclick="copyStock()" style="background:#03dac6; color:#000; margin-top:15px">📋 КОПІЮВАТИ СПИСОК</button>
-    </div>
-
-    <div id="history" class="card" style="display:none">
-        <span class="section-title">📜 Останні 5 чеків</span>
-        <div id="h-list"></div>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-
-        const colorNames = ["Basic Purple", "Basic Pink", "Basic Green", "Basic Black", "Basic White", "Silk Gold", "Silk Silver"];
-
-        function calc() {
-            let w = parseFloat(document.getElementById('w').value) || 0;
-            let p_price = parseFloat(document.getElementById('p_price').value) || 0;
-            let h = parseFloat(document.getElementById('t_h').value) || 0;
-            let min = parseFloat(document.getElementById('t_m').value) || 0;
-            let c_count = parseInt(document.getElementById('c_count').value) || 1;
-            let m = document.getElementById('m').value;
-            let pwr = parseInt(document.getElementById('printer').value);
-            
-            let time = h + (min/60);
-            let pack = document.getElementById('pack').checked ? 40 : 0;
-            let urgent = document.getElementById('urgent').checked ? 1.15 : 1;
-            let zsu = parseInt(document.getElementById('zsu').value) || 0;
-
-            // Собівартість: Пластик + Світло (4.32грн) + Аморт (4грн/год) + Мультиколір (10грн зміна)
-            let multiColorCost = (c_count - 1) * 10;
-            let cost = (w * (p_price/1000)) + (time * 4) + ((pwr/1000) * time * 4.32) + multiColorCost;
-            
-            let sell = (cost * (1 + m/100) * 1.05) + pack + zsu;
-            sell *= urgent;
-
-            document.getElementById('res').innerText = Math.round(sell) + " ₴";
-            document.getElementById('profit_val').innerText = Math.round(sell - cost - zsu);
-            document.getElementById('mLabel').innerText = m + "%";
-        }
-
         function copyCheck() {
-            let name = document.getElementById('p_name').value || "Модель";
+            let n = document.getElementById('p_name').value || "3D Модель";
             let res = document.getElementById('res').innerText;
-            let zsu = document.getElementById('zsu').value;
-            
-            let text = `📦 Dryguny Hub\n───────────────\n🤖 Виріб: ${name}\n💰 До сплати: ${res}${zsu > 0 ? '\n🇺🇦 Донат ЗСУ включено' : ''}\n───────────────\nДякуємо за замовлення!`;
+            let qty = document.getElementById('qty').value;
+            let text = `📦 Dryguny 3D\n🤖 Виріб: ${n}\n🔢 Кількість: ${qty} шт\n💰 До сплати: ${res}\n\nДякуємо за замовлення!`;
             
             navigator.clipboard.writeText(text).then(() => {
-                tg.showAlert("Чек скопійовано!");
-                saveH(name, res);
+                tg.showScanQrPopup({text: "Чек скопійовано!"}); // Візуальний фідбек
+                setTimeout(() => tg.closeScanQrPopup(), 1000);
             });
         }
 
-        function saveH(n, p) {
-            let h = JSON.parse(localStorage.getItem('dry_final') || '[]');
-            h.unshift({n, p}); if(h.length > 5) h.pop();
-            localStorage.setItem('dry_final', JSON.stringify(h));
-            renderH();
-        }
-
-        function renderH() {
-            let h = JSON.parse(localStorage.getItem('dry_final') || '[]');
-            document.getElementById('h-list').innerHTML = h.map(x => `<div class="history-item"><span>${x.n}</span><b>${x.p}</b></div>`).join('');
-        }
-
-        function renderColors() {
-            document.getElementById('color-list').innerHTML = colorNames.map(c => `<div class="switch-box"><span>${c}</span><label class="switch"><input type="checkbox" class="c-check" data-name="${c}"><span class="slider"></span></label></div>`).join('');
-        }
-
-        function copyStock() {
-            let sel = []; document.querySelectorAll('.c-check:checked').forEach(e => sel.push("✅ " + e.dataset.name));
-            navigator.clipboard.writeText(`🎨 Наявність кольорів:\n${sel.join('\n')}`).then(() => tg.showAlert("Скопійовано!"));
-        }
-
-        function openTab(id, btn) {
-            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).style.display = 'block';
-            btn.classList.add('active');
-        }
-
-        window.onload = () => { renderColors(); renderH(); calc(); };
+        window.onload = calc;
     </script>
 </body>
 </html>
