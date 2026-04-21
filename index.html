@@ -56,7 +56,7 @@
 <body class="dark">
 
     <div class="header-box">
-        <div style="font-weight: 900; font-size: 20px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
+        <div style="font-weight: 900; font-size: 20px;">CALCULATOR <span style="color:var(--accent)">3D</span></div>
         <button class="theme-toggle" onclick="document.body.classList.toggle('dark')">🌓</button>
     </div>
 
@@ -369,12 +369,12 @@
         }
 
         function copySingle(name, price) {
-            navigator.clipboard.writeText(`📦 Dryguny 3D\n🤖 Модель: ${name}\n💰 Ціна: ${price}₴`);
+            navigator.clipboard.writeText(`📦 Чек\n🤖 Модель: ${name}\n💰 Ціна: ${price}₴`);
             alert("Чек для клієнта скопійовано!");
         }
 
         function copyCartCheck() {
-            let txt = "📦 Dryguny 3D - Замовлення:\n";
+            let txt = "📦Чек - Замовлення:\n";
             let sum = 0;
             cart.forEach(i => { txt += `- ${i.name}: ${i.price}₴\n`; sum += i.price; });
             txt += `\n🔥 Разом до оплати: ${sum}₴`;
