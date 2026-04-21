@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Pro v39.6</title>
+    <title>Dryguny Pro v39.7</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
@@ -106,13 +106,21 @@
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             ПОСТ-ОБРОБКА
         </div>
-        <select id="post_proc" onchange="calc()">
-            <option value="0">Без обробки (0₴)</option>
-            <option value="20">Легка (зняти брім) (+20₴)</option>
-            <option value="50">Середня (підтримки) (+50₴)</option>
-            <option value="100">Складна (збірка/склейка) (+100₴)</option>
-        </select>
-        <div class="hint">Включай середню, якщо багато дерев'яних підтримок, складну — якщо модель з багатьох частин.</div>
+        <div class="row">
+            <div style="flex:2">
+                <select id="post_proc_select" onchange="syncPostProc()">
+                    <option value="0">Без обробки (0₴)</option>
+                    <option value="20">Легка (20₴)</option>
+                    <option value="50">Середня (50₴)</option>
+                    <option value="100">Складна (100₴)</option>
+                    <option value="custom">Своя ціна...</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <input type="number" id="post_proc" value="0" placeholder="₴" oninput="calc()">
+            </div>
+        </div>
+        <div class="hint">Вписуй ціну вручну або вибирай готовий варіант.</div>
 
         <div class="section-title" style="margin-top:15px">
             <svg viewBox="0 0 24 24"><path d="M11.8 2.1c-.5-.1-1 .1-1.3.6L6.1 9H2c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1c0 2.2 1.8 4 4 4s4-1.8 4-4h2c0 2.2 1.8 4 4 4s4-1.8 4-4h1c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2h-4.1l-4.4-6.3c-.3-.5-.8-.7-1.3-.6z"/></svg>
@@ -191,6 +199,15 @@
         let catalog = JSON.parse(localStorage.getItem('dryguny_catalog') || '[]');
         let currentFinalPrice = 0;
 
+        function syncPostProc() {
+            const select = document.getElementById('post_proc_select');
+            const input = document.getElementById('post_proc');
+            if (select.value !== 'custom') {
+                input.value = select.value;
+            }
+            calc();
+        }
+
         function loadSettings() {
             const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
             const fields = ['p_price', 'spool_w', 'val_amort', 'val_light', 'box_party_price', 'box_count', 'fill_price'];
@@ -245,8 +262,12 @@
             let urg = document.getElementById('is_urgent').checked ? 1.2 : 1;
             let post = parseFloat(document.getElementById('post_proc').value) || 0;
 
+            // Справжня собівартість
             let cost = ((w * (1 + fail/100)) * (pPrice/spoolW)) + (totalTime * (parseFloat(document.getElementById('val_amort').value) + parseFloat(document.getElementById('val_light').value))) + pack + post + extra;
-            let final = cost * (1 + m/100) * urg;
+            
+            // Націнка тільки на процес друку (пластик + час)
+            let printCostOnly = ((w * (1 + fail/100)) * (pPrice/spoolW)) + (totalTime * (parseFloat(document.getElementById('val_amort').value) + parseFloat(document.getElementById('val_light').value)));
+            let final = (printCostOnly * (1 + m/100) * urg) + pack + post + extra;
 
             currentFinalPrice = Math.round(final);
             document.getElementById('res').innerText = currentFinalPrice + " ₴";
@@ -294,7 +315,11 @@
             document.getElementById('fail_percent').value = it.fail;
             document.getElementById('extra_cost').value = it.extra || 0;
             
-            // Відновлення вибору націнки в селекті
+            // Відновлення селекту обробки
+            const pSelect = document.getElementById('post_proc_select');
+            if([0, 20, 50, 100].includes(Number(it.post))) pSelect.value = it.post;
+            else pSelect.value = 'custom';
+
             let dSelect = document.getElementById('discount_type');
             if (it.m == 100 || it.m == 50 || it.m == 30) {
                 dSelect.value = it.m;
