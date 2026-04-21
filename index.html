@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Pro v31.0</title>
+    <title>Dryguny Pro v32.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
@@ -51,18 +51,16 @@
 
         .main-btn { background: var(--accent); color: white; border: none; padding: 20px; border-radius: 20px; width: 100%; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; }
         
-        /* Стиль для історії */
         .history-item { 
             background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 10px; 
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-            border: 1px solid transparent; transition: 0.2s;
+            transition: 0.2s;
         }
-        .history-item:active { transform: scale(0.98); border-color: var(--accent); }
-        .history-info b { display: block; font-size: 16px; }
+        .history-item:active { transform: scale(0.97); }
+        .history-info b { display: block; font-size: 15px; }
         .history-info span { font-size: 11px; color: var(--gray); }
 
-        .slider-box { margin: 20px 0; }
-        input[type=range] { width: 100%; accent-color: var(--accent); }
+        input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0; }
     </style>
 </head>
 <body class="dark">
@@ -83,12 +81,12 @@
 
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('calc', this)">КАЛЬКУЛЯТОР</button>
-        <button class="tab-btn" onclick="openTab('furniture', this)">ФУРНІТУРА</button>
+        <button class="tab-btn" onclick="openTab('modelling', this)">МОДЕЛЮВАННЯ</button>
         <button class="tab-btn" onclick="openTab('history', this)">📜 ІСТОРІЯ</button>
     </div>
 
     <div id="calc" class="card" style="display:block">
-        <div class="section-title">📦 ПАРАМЕТРИ</div>
+        <div class="section-title">📦 ПАРАМЕТРИ ПРЕСЕТУ</div>
         <input type="text" id="p_name" placeholder="Назва моделі">
         <div class="row">
             <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calc()"></div>
@@ -99,7 +97,6 @@
             <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
         </div>
 
-        <div class="section-title" style="margin-top:30px">⚙️ НАЛАШТУВАННЯ</div>
         <div class="row">
             <div><label>К-сть (шт)</label><input type="number" id="qty" value="1" oninput="calc()"></div>
             <div>
@@ -107,43 +104,45 @@
                 <select id="printer" onchange="calc()">
                     <option value="5">Bambu A1 (5 ₴/год)</option>
                     <option value="10">Bambu X1C (10 ₴/год)</option>
-                    <option value="3">Ender 3 (3 ₴/год)</option>
+                    <option value="150">Ставка оператора (150/год)</option>
                 </select>
             </div>
         </div>
 
-        <div class="slider-box">
-            <label>Націнка: <span style="color:var(--accent)" id="mLabel">100%</span></label>
-            <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
-        </div>
+        <label>Націнка: <span style="color:var(--accent)" id="mLabel">100%</span></label>
+        <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
 
-        <div class="slider-box">
-            <label>Брак: <span id="fLabel">5%</span></label>
-            <input type="range" id="fail" min="0" max="50" value="5" oninput="calc()">
-        </div>
+        <label>Брак: <span id="fLabel">5%</span></label>
+        <input type="range" id="fail" min="0" max="30" value="5" oninput="calc()">
 
-        <button class="main-btn" onclick="saveToHistory(); copyCheck();">СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
+        <button class="main-btn" onclick="saveAndCopy()">СКОПІЮВАТИ ТА ЗБЕРЕГТИ</button>
     </div>
 
-    <div id="furniture" class="card" style="display:none">
-        <div class="section-title">🔩 ДОДАТКОВІ ВИТРАТИ</div>
-        <label>Ціна фурнітури (₴ на виріб)</label>
-        <input type="number" id="furn_price" value="0" oninput="calc()" placeholder="Гвинти, магніти тощо">
-        <label>Пост-обробка (₴)</label>
-        <input type="number" id="post_val" value="0" oninput="calc()">
-        <p style="font-size: 11px; color: var(--gray); margin-top: 15px;">Ці значення автоматично додаються до собівартості у калькуляторі.</p>
+    <div id="modelling" class="card" style="display:none">
+        <div class="section-title">🎨 РОЗРОБКА МОДЕЛІ</div>
+        <div class="row">
+            <div>
+                <label>Час роботи (год)</label>
+                <input type="number" id="mod_h" value="0" oninput="calc()">
+            </div>
+            <div>
+                <label>Ціна за годину (₴)</label>
+                <input type="number" id="mod_rate" value="200" oninput="calc()">
+            </div>
+        </div>
+        <label>Додаткові послуги (₴)</label>
+        <input type="number" id="extra_service" value="0" oninput="calc()" placeholder="Напр. фарбування">
+        <p style="font-size: 11px; color: var(--gray); margin-top: 15px;">Ціна моделювання додається до загального рахунку один раз (не множиться на кількість).</p>
     </div>
 
     <div id="history" class="card" style="display:none">
-        <div class="section-title">📜 ОСТАННІ РОЗРАХУНКУ</div>
-        <div id="history-list">
-            <p style="text-align:center; color:var(--gray); font-size:12px;">Історія порожня</p>
-        </div>
+        <div class="section-title">📜 ОСТАННІ ЧЕКИ</div>
+        <div id="history-list"></div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        let history = JSON.parse(localStorage.getItem('print_history') || '[]');
+        let history = JSON.parse(localStorage.getItem('dryguny_history') || '[]');
 
         function calc() {
             let w = parseFloat(document.getElementById('w').value) || 0;
@@ -154,16 +153,20 @@
             let qty = parseFloat(document.getElementById('qty').value) || 1;
             let amort = parseFloat(document.getElementById('printer').value) || 0;
             let m = parseFloat(document.getElementById('m').value);
-            let furn = parseFloat(document.getElementById('furn_price').value) || 0;
-            let post = parseFloat(document.getElementById('post_val').value) || 0;
-
-            let totalTime = h + (min / 60);
-            let costPlast = (w * (1 + fail)) * (p_price / 1000);
-            let costTime = totalTime * amort;
             
-            let singleCost = costPlast + costTime + furn + post;
-            let totalCost = singleCost * qty;
-            let finalPrice = totalCost * (1 + m / 100);
+            let modH = parseFloat(document.getElementById('mod_h').value) || 0;
+            let modRate = parseFloat(document.getElementById('mod_rate').value) || 0;
+            let extra = parseFloat(document.getElementById('extra_service').value) || 0;
+
+            let totalTimeH = h + (min / 60);
+            let costPlast = (w * (1 + fail)) * (p_price / 1000);
+            let costPrint = totalTimeH * amort;
+            
+            let productionCost = (costPlast + costPrint) * qty;
+            let modellingCost = (modH * modRate) + extra;
+            
+            let totalCost = productionCost + modellingCost;
+            let finalPrice = (productionCost * (1 + m / 100)) + modellingCost;
 
             document.getElementById('res').innerText = Math.round(finalPrice) + " ₴";
             document.getElementById('total_cost').innerText = Math.round(totalCost);
@@ -172,62 +175,81 @@
             document.getElementById('fLabel').innerText = Math.round(fail * 100) + "%";
         }
 
-        function saveToHistory() {
-            let data = {
+        function saveAndCopy() {
+            let name = document.getElementById('p_name').value || "3D Модель";
+            let price = document.getElementById('res').innerText;
+            
+            // Збереження
+            let entry = {
                 id: Date.now(),
-                name: document.getElementById('p_name').value || "Без назви",
-                price: document.getElementById('res').innerText,
+                name: name,
+                price: price,
                 date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                // Зберігаємо всі поля для відновлення
-                w: document.getElementById('w').value,
-                pp: document.getElementById('p_price').value,
-                f: document.getElementById('fail').value,
-                th: document.getElementById('t_h').value,
-                tm: document.getElementById('t_m').value,
-                q: document.getElementById('qty').value,
-                m: document.getElementById('m').value,
-                pr: document.getElementById('printer').value
+                // Дані для відновлення
+                vals: {
+                    w: document.getElementById('w').value,
+                    pp: document.getElementById('p_price').value,
+                    th: document.getElementById('t_h').value,
+                    tm: document.getElementById('t_m').value,
+                    q: document.getElementById('qty').value,
+                    m: document.getElementById('m').value,
+                    f: document.getElementById('fail').value,
+                    pr: document.getElementById('printer').value,
+                    mh: document.getElementById('mod_h').value,
+                    mr: document.getElementById('mod_rate').value,
+                    ex: document.getElementById('extra_service').value
+                }
             };
-            history.unshift(data);
-            if(history.length > 10) history.pop();
-            localStorage.setItem('print_history', JSON.stringify(history));
-            renderHistory();
+            
+            history.unshift(entry);
+            if(history.length > 15) history.pop();
+            localStorage.setItem('dryguny_history', JSON.stringify(history));
+            
+            // Копіювання
+            let checkText = `📦 Dryguny 3D\n🤖 Виріб: ${name}\n🔢 К-сть: ${document.getElementById('qty').value} шт\n💰 Ціна: ${price}\n\nДякуємо за замовлення!`;
+            navigator.clipboard.writeText(checkText);
+            
+            tg.HapticFeedback.notificationOccurred('success');
+            alert("Чек скопійовано! ✅");
+        }
+
+        function restore(id) {
+            let item = history.find(x => x.id === id);
+            if(!item) return;
+            let v = item.vals;
+            document.getElementById('p_name').value = item.name;
+            document.getElementById('w').value = v.w;
+            document.getElementById('p_price').value = v.pp;
+            document.getElementById('t_h').value = v.th;
+            document.getElementById('t_m').value = v.tm;
+            document.getElementById('qty').value = v.q;
+            document.getElementById('m').value = v.m;
+            document.getElementById('fail').value = v.f;
+            document.getElementById('printer').value = v.pr;
+            document.getElementById('mod_h').value = v.mh;
+            document.getElementById('mod_rate').value = v.mr;
+            document.getElementById('extra_service').value = v.ex;
+            
+            openTab('calc', document.querySelector('.tab-btn'));
+            calc();
         }
 
         function renderHistory() {
-            const list = document.getElementById('history-list');
-            if(history.length === 0) return;
-            list.innerHTML = '';
+            const container = document.getElementById('history-list');
+            container.innerHTML = history.length ? '' : '<p style="text-align:center;color:var(--gray)">Історія порожня</p>';
             history.forEach(item => {
                 let div = document.createElement('div');
                 div.className = 'history-item';
-                div.onclick = () => restoreHistory(item.id);
+                div.onclick = () => restore(item.id);
                 div.innerHTML = `
                     <div class="history-info">
                         <b>${item.name}</b>
-                        <span>${item.date} • ${item.q} шт.</span>
+                        <span>${item.date} • ${item.vals.q} шт</span>
                     </div>
                     <b style="color:var(--accent)">${item.price}</b>
                 `;
-                list.appendChild(div);
+                container.appendChild(div);
             });
-        }
-
-        function restoreHistory(id) {
-            let item = history.find(x => x.id === id);
-            if(!item) return;
-            document.getElementById('p_name').value = item.name;
-            document.getElementById('w').value = item.w;
-            document.getElementById('p_price').value = item.pp;
-            document.getElementById('fail').value = item.f;
-            document.getElementById('t_h').value = item.th;
-            document.getElementById('t_m').value = item.tm;
-            document.getElementById('qty').value = item.q;
-            document.getElementById('m').value = item.m;
-            document.getElementById('printer').value = item.pr;
-            openTab('calc', document.querySelector('.tab-btn'));
-            calc();
-            tg.HapticFeedback.notificationOccurred('success');
         }
 
         function openTab(id, btn) {
@@ -238,18 +260,7 @@
             if(id === 'history') renderHistory();
         }
 
-        function copyCheck() {
-            let n = document.getElementById('p_name').value || "3D Виріб";
-            let p = document.getElementById('res').innerText;
-            let text = `📦 ДРУК: ${n}\n💰 ЦІНА: ${p}\n\nДякуємо!`;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                tg.showScanQrPopup({ text: "ЧЕК СКОПІЙОВАНО ✅" });
-                setTimeout(() => tg.closeScanQrPopup(), 1200);
-            });
-        }
-
-        window.onload = () => { calc(); renderHistory(); };
+        window.onload = calc;
     </script>
 </body>
 </html>
