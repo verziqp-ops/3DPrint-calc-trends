@@ -136,13 +136,48 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ВСТАВ СВІЙ ID ТУТ
         const ADMIN_ID = 6259271140; 
+        const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
 
-        let catalog = JSON.parse(localStorage.getItem('dryguny_catalog') || '[]');
+        let catalog = [];
         let cart = JSON.parse(localStorage.getItem('dryguny_cart') || '[]');
         let clientCartCount = 0;
         let currentImg = "";
+
+        async function loadSharedCatalog() {
+            try {
+                const res = await fetch(`${DB_URL}/catalog.json`);
+                const data = await res.json();
+                catalog = data ? Object.values(data) : [];
+                renderPublicShop();
+            } catch (e) { console.error("Помилка БД"); }
+        }
+
+        async function saveToCatalog() {
+            let name = document.getElementById('p_name').value;
+            if(!name) return alert("Введи назву!");
+            let d = calc();
+            let newProduct = {
+                id: Date.now(),
+                name: name, desc: document.getElementById('p_desc').value,
+                category: document.getElementById('p_cat').value,
+                calculated_price: d.final, img: currentImg
+            };
+
+            await fetch(`${DB_URL}/catalog/${newProduct.id}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(newProduct)
+            });
+            
+            alert("Збережено в хмару!");
+            currentImg = ""; document.getElementById('img_preview').style.display = 'none';
+            loadSharedCatalog();
+        }
+
+        async function deleteProduct(id) {
+            await fetch(`${DB_URL}/catalog/${id}.json`, { method: 'DELETE' });
+            loadSharedCatalog();
+        }
 
         function checkAdmin() {
             const user = tg.initDataUnsafe?.user;
@@ -186,21 +221,6 @@
             return { final: Math.round(final), cost };
         }
 
-        function saveToCatalog() {
-            let name = document.getElementById('p_name').value;
-            if(!name) return alert("Введи назву!");
-            let d = calc();
-            catalog.unshift({
-                name: name, desc: document.getElementById('p_desc').value,
-                category: document.getElementById('p_cat').value,
-                calculated_price: d.final, img: currentImg
-            });
-            localStorage.setItem('dryguny_catalog', JSON.stringify(catalog));
-            alert("Збережено!");
-            currentImg = ""; document.getElementById('img_preview').style.display = 'none';
-            renderPublicShop();
-        }
-
         function addToCart() {
             let name = document.getElementById('p_name').value || "Без назви";
             let d = calc();
@@ -235,7 +255,7 @@
             document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
             document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(id === 'shop-view') renderPublicShop();
+            if(id === 'shop-view') loadSharedCatalog();
         }
 
         function openTab(id, btn) {
@@ -260,7 +280,7 @@
             document.getElementById('catalog-list').innerHTML = catalog.map((item, i) => `
                 <div class="catalog-item">
                     <span>${item.name} (${item.calculated_price}₴)</span>
-                    <button onclick="catalog.splice(${i},1); localStorage.setItem('dryguny_catalog', JSON.stringify(catalog)); renderCatalog();" style="color:red;border:none;background:none;">×</button>
+                    <button onclick="deleteProduct('${item.id}')" style="color:red;border:none;background:none;">×</button>
                 </div>`).join('');
         }
 
@@ -286,7 +306,7 @@
             checkAdmin();
             const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
             for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
-            renderPublicShop();
+            loadSharedCatalog();
             calc();
         };
     </script>
