@@ -10,18 +10,14 @@
             --accent: #ff5722; --bg: #fdfaf5; --card-bg: #ffffff; 
             --text: #2c2c2c; --gray: #9e9e9e; --input: #f7f3f0;
             --border: rgba(0,0,0,0.06); --banner-bg: #000000;
-            --icon-color: #000000;
         }
         body.dark { 
             --bg: #0f0f0f; --card-bg: #1a1a1a; --text: #f0f0f0; 
             --gray: #777; --input: #262626; --border: rgba(255,255,255,0.05);
-            --icon-color: #ffffff;
         }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; transition: 0.4s; padding-bottom: 80px; }
         
-        /* МАГАЗИН ТА КОШИК КЛІЄНТА */
         .shop-categories { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 15px; scrollbar-width: none; }
-        .shop-categories::-webkit-scrollbar { display: none; }
         .cat-chip { background: var(--input); color: var(--gray); padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
         .cat-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 
@@ -29,41 +25,35 @@
         .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
         .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: var(--input); }
         .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
-        .product-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; }
-        .product-desc { font-size: 10px; color: var(--gray); margin-bottom: 8px; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
         .product-price { color: var(--accent); font-weight: 900; font-size: 16px; margin-bottom: 10px; }
         .buy-btn { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; font-size: 12px; }
 
         #floating-cart { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 15px 20px; border-radius: 30px; font-weight: 900; box-shadow: 0 10px 20px rgba(255,87,34,0.3); z-index: 999; cursor: pointer; display: none; align-items: center; gap: 10px; }
 
-        /* АДМІН-ПАНЕЛЬ ТА КАЛЬКУЛЯТОР */
-        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .theme-toggle { background: var(--card-bg); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; color: var(--text); }
         .price-banner { background: var(--banner-bg); color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
         .price-tag { font-size: 52px; font-weight: 900; color: var(--accent); margin: 5px 0; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
-        .stat-item { text-align: center; font-size: 13px; }
-        .stat-item span { display: block; color: var(--gray); font-size: 9px; margin-bottom: 4px; text-transform: uppercase; }
-        .card { background: var(--card-bg); border-radius: 24px; padding: 22px; width: 100%; max-width: 440px; box-sizing: border-box; margin: 0 auto 20px; border: 1px solid var(--border); }
-        .tabs { display: flex; overflow-x: auto; background: var(--input); border-radius: 16px; padding: 5px; margin: 0 auto 20px; width: 100%; max-width: 440px; gap: 4px; scrollbar-width: none; }
-        .tab-btn { flex: 1; white-space: nowrap; padding: 10px 12px; border: none; border-radius: 12px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; font-size: 10px; }
-        .tab-btn.active { background: var(--accent); color: white; }
-        label { display: block; margin: 15px 0 6px 4px; font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; border-radius: 16px; border: none; background: var(--input); color: var(--text); font-size: 16px; outline: none; box-sizing: border-box; }
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 20px; width: 100%; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
-        .round-btn { background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer; margin-top: 5px; }
-        .cart-item, .catalog-item { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* Стиль для прев'ю фото */
-        #img_preview { width: 100%; border-radius: 12px; margin-top: 8px; display: none; aspect-ratio: 1/1; object-fit: cover; }
+        .card { background: var(--card-bg); border-radius: 24px; padding: 22px; width: 100%; max-width: 440px; box-sizing: border-box; margin: 0 auto 20px; border: 1px solid var(--border); }
+        .tabs { display: flex; overflow-x: auto; background: var(--input); border-radius: 16px; padding: 5px; margin: 0 auto 20px; gap: 4px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; font-size: 10px; }
+        .tab-btn.active { background: var(--accent); color: white; }
+        
+        label { display: block; margin: 15px 0 6px 4px; font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
+        input, select { width: 100%; padding: 14px; border-radius: 16px; border: none; background: var(--input); color: var(--text); font-size: 16px; box-sizing: border-box; }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 20px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .round-btn { background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 10px; font-size: 10px; cursor: pointer; }
+        .cart-item, .catalog-item { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        #img_preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; aspect-ratio: 1/1; object-fit: cover; border: 1px solid var(--accent); }
     </style>
 </head>
 <body class="dark">
 
-    <div class="header-box">
+    <div class="header-box" style="display:flex; justify-content:space-between; margin-bottom:20px;">
         <div style="font-weight: 900; font-size: 20px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
-        <button class="theme-toggle" onclick="document.body.classList.toggle('dark')">🌓</button>
+        <button onclick="document.body.classList.toggle('dark')" style="background:none; border:none; font-size:20px; cursor:pointer;">🌓</button>
     </div>
 
     <div class="tabs" id="mode-nav">
@@ -71,8 +61,8 @@
         <button class="tab-btn" onclick="showView('admin-view', this)">🔑 АДМІН (КАЛЬК)</button>
     </div>
 
-    <div id="shop-view" style="display:block">
-        <div class="shop-categories" id="cat-tabs">
+    <div id="shop-view">
+        <div class="shop-categories">
             <div class="cat-chip active" onclick="filterShop('Всі', this)">Всі</div>
             <div class="cat-chip" onclick="filterShop('Дім', this)">🏠 Дім</div>
             <div class="cat-chip" onclick="filterShop('Брелоки', this)">🔑 Брелоки</div>
@@ -81,15 +71,12 @@
         <div class="shop-grid" id="public-shop-list"></div>
     </div>
 
-    <div id="floating-cart" onclick="alert('Кошик у розробці')">
-        <span>🛒</span>
-        <span id="client-cart-count">0</span>
-        <span>ОФОРМИТИ</span>
+    <div id="floating-cart" onclick="alert('Оформлення замовлення...')">
+        <span>🛒</span> <span id="client-cart-count">0</span> <span>ОФОРМИТИ</span>
     </div>
 
     <div id="admin-view" style="display:none">
         <div class="price-banner">
-            <div class="banner-label">Ціна для клієнта</div>
             <div id="res" class="price-tag">0 ₴</div>
             <button class="round-btn" onclick="roundPrice()">ОКРУГЛИТИ ДО 10</button>
             <div class="stats-grid">
@@ -105,12 +92,12 @@
             <button class="tab-btn" onclick="openTab('storage', this)">📦 СКЛАД</button>
         </div>
 
-        <div id="calc" class="card tab-content" style="display:block">
+        <div id="calc" class="card tab-content">
             <input type="text" id="p_name" placeholder="Назва моделі">
             <input type="text" id="p_desc" placeholder="Опис" style="margin-top:8px;">
             
-            <label>Додати фото</label>
-            <input type="file" id="p_img_input" accept="image/*" onchange="previewImage(this)">
+            <label>Фото товару</label>
+            <input type="file" accept="image/*" onchange="previewImage(this)">
             <img id="img_preview">
 
             <div class="row">
@@ -129,10 +116,10 @@
                 <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
                 <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
             </div>
-            <label>Націнка (%)</label>
-            <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
-            <div class="row" style="margin-top:15px">
-                <button class="main-btn" onclick="alert('Додано!')" style="flex:2">У КОШИК</button>
+            <label>Націнка: <span id="m_val">100</span>%</label>
+            <input type="range" id="m" min="0" max="500" value="100" oninput="document.getElementById('m_val').innerText=this.value; calc()">
+            <div class="row">
+                <button class="main-btn" onclick="addToCart()" style="flex:2">У КОШИК</button>
                 <button class="main-btn" onclick="saveToCatalog()" style="background:#444; flex:1">💾 В МАГАЗ</button>
             </div>
         </div>
@@ -149,29 +136,18 @@
 
     <script>
         let catalog = JSON.parse(localStorage.getItem('dryguny_catalog') || '[]');
-        let currentImageBase64 = "";
+        let cart = JSON.parse(localStorage.getItem('dryguny_cart') || '[]');
+        let clientCartCount = 0;
+        let currentImg = "";
 
-        // Функція для прев'ю картинки
         function previewImage(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentImageBase64 = e.target.result;
-                    const preview = document.getElementById('img_preview');
-                    preview.src = currentImageBase64;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function showView(id, btn) {
-            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
-            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
-            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'shop-view') renderPublicShop();
+            const reader = new FileReader();
+            reader.onload = e => {
+                currentImg = e.target.result;
+                document.getElementById('img_preview').src = currentImg;
+                document.getElementById('img_preview').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
         }
 
         function calc() {
@@ -203,22 +179,23 @@
             let name = document.getElementById('p_name').value;
             if(!name) return alert("Введи назву!");
             let d = calc();
-            let model = {
-                name: name,
-                desc: document.getElementById('p_desc').value,
+            catalog.unshift({
+                name: name, desc: document.getElementById('p_desc').value,
                 category: document.getElementById('p_cat').value,
-                calculated_price: d.final,
-                img: currentImageBase64 // Зберігаємо картинку
-            };
-            catalog = catalog.filter(i => i.name !== name);
-            catalog.unshift(model);
+                calculated_price: d.final, img: currentImg
+            });
             localStorage.setItem('dryguny_catalog', JSON.stringify(catalog));
-            alert("Товар додано в магазин!");
-            
-            // Очищення після збереження
-            currentImageBase64 = "";
-            document.getElementById('img_preview').style.display = 'none';
-            document.getElementById('p_img_input').value = "";
+            alert("Збережено!");
+            currentImg = ""; document.getElementById('img_preview').style.display = 'none';
+        }
+
+        function addToCart() {
+            let name = document.getElementById('p_name').value || "Без назви";
+            let d = calc();
+            cart.push({ name: name, price: d.final });
+            localStorage.setItem('dryguny_cart', JSON.stringify(cart));
+            document.getElementById('cart-count').innerText = cart.length;
+            alert("Додано в кошик адміна!");
         }
 
         function renderPublicShop(filter = 'Всі') {
@@ -226,12 +203,11 @@
             const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
             list.innerHTML = filtered.map(item => `
                 <div class="product-card">
-                    ${item.img ? `<img src="${item.img}" class="product-img">` : `<div class="product-img" style="display:flex; align-items:center; justify-content:center; font-weight:bold; color:#777;">3D</div>`}
+                    ${item.img ? `<img src="${item.img}" class="product-img">` : `<div class="product-img" style="display:flex;align-items:center;justify-content:center;">3D</div>`}
                     <div class="product-info">
                         <div class="product-title">${item.name}</div>
-                        <div class="product-desc">${item.desc || ''}</div>
                         <div class="product-price">${item.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="alert('Додано в кошик!')">В КОШИК</button>
+                        <button class="buy-btn" onclick="clientCartCount++; document.getElementById('client-cart-count').innerText=clientCartCount; document.getElementById('floating-cart').style.display='flex';">В КОШИК</button>
                     </div>
                 </div>`).join('');
         }
@@ -242,22 +218,37 @@
             renderPublicShop(cat);
         }
 
+        function showView(id, btn) {
+            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
+            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
+            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(id === 'shop-view') renderPublicShop();
+        }
+
         function openTab(id, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).style.display = 'block';
             btn.classList.add('active');
+            if(id === 'cart') renderCart();
             if(id === 'catalog') renderCatalog();
+        }
+
+        function renderCart() {
+            document.getElementById('cart-list').innerHTML = cart.map((item, i) => `
+                <div class="cart-item">
+                    <span>${item.name} - ${item.price}₴</span>
+                    <button onclick="cart.splice(${i},1); localStorage.setItem('dryguny_cart', JSON.stringify(cart)); renderCart();" style="color:red;border:none;background:none;">×</button>
+                </div>`).join('');
+            document.getElementById('cart-count').innerText = cart.length;
         }
 
         function renderCatalog() {
             document.getElementById('catalog-list').innerHTML = catalog.map((item, i) => `
                 <div class="catalog-item">
-                    <div style="display:flex; align-items:center; gap:10px">
-                        ${item.img ? `<img src="${item.img}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : ''}
-                        <div><b>${item.name}</b><br><small>${item.calculated_price}₴</small></div>
-                    </div>
-                    <button onclick="catalog.splice(${i},1); localStorage.setItem('dryguny_catalog', JSON.stringify(catalog)); renderCatalog();" style="color:red; border:none; background:none;">×</button>
+                    <span>${item.name} (${item.calculated_price}₴)</span>
+                    <button onclick="catalog.splice(${i},1); localStorage.setItem('dryguny_catalog', JSON.stringify(catalog)); renderCatalog();" style="color:red;border:none;background:none;">×</button>
                 </div>`).join('');
         }
 
@@ -282,8 +273,8 @@
         window.onload = () => {
             const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
             for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
-            calc();
             renderPublicShop();
+            calc();
         };
     </script>
 </body>
