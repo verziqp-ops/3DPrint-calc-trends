@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Твій токен та ID (Макс, перевір, щоб ID був твій)
 TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
-ADMIN_ID = 5621405021 
+ADMIN_ID = 6259271140 
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
