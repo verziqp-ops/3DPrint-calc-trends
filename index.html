@@ -19,7 +19,6 @@
         }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; transition: 0.4s; padding-bottom: 80px; }
         
-        /* МАГАЗИН ТА КОШИК КЛІЄНТА */
         .shop-categories { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 15px; scrollbar-width: none; }
         .shop-categories::-webkit-scrollbar { display: none; }
         .cat-chip { background: var(--input); color: var(--gray); padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
@@ -36,10 +35,6 @@
 
         #floating-cart { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 15px 20px; border-radius: 30px; font-weight: 900; box-shadow: 0 10px 20px rgba(255,87,34,0.3); z-index: 999; cursor: pointer; display: none; align-items: center; gap: 10px; }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px; overflow-y: auto; }
-        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 24px; max-width: 400px; margin: 40px auto; }
-
-        /* АДМІН-ПАНЕЛЬ ТА КАЛЬКУЛЯТОР */
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .theme-toggle { background: var(--card-bg); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; color: var(--text); }
         .price-banner { background: var(--banner-bg); color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
@@ -55,9 +50,11 @@
         input, select { width: 100%; padding: 14px; border-radius: 16px; border: none; background: var(--input); color: var(--text); font-size: 16px; outline: none; box-sizing: border-box; }
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
         .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 20px; width: 100%; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
-        .sec-btn { background: var(--input); color: var(--text); border: none; padding: 14px; border-radius: 16px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 8px; }
-        .round-btn { background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer; margin-top: 5px; }
-        .cart-item, .catalog-item { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .catalog-item { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Спеціальний стиль для завантаження фото */
+        .file-input-wrapper { margin-top: 10px; }
+        #img_preview { width: 100%; border-radius: 15px; margin-top: 10px; display: none; aspect-ratio: 1/1; object-fit: cover; border: 2px solid var(--accent); }
     </style>
 </head>
 <body class="dark">
@@ -82,17 +79,11 @@
         <div class="shop-grid" id="public-shop-list"></div>
     </div>
 
-    <div id="floating-cart" onclick="openOrderModal()">
-        <span>🛒</span>
-        <span id="client-cart-count">0</span>
-        <span>ОФОРМИТИ</span>
-    </div>
-
     <div id="admin-view" style="display:none">
         <div class="price-banner">
             <div class="banner-label">Ціна для клієнта</div>
             <div id="res" class="price-tag">0 ₴</div>
-            <button class="round-btn" onclick="roundPrice()">ОКРУГЛИТИ ДО 10</button>
+            <button class="round-btn" onclick="roundPrice()" style="background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer;">ОКРУГЛИТИ ДО 10</button>
             <div class="stats-grid">
                 <div class="stat-item"><span>Собівартість</span><b id="total_cost">0</b> ₴</div>
                 <div class="stat-item"><span>Прибуток</span><b id="profit_val">0</b> ₴</div>
@@ -102,24 +93,22 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab('calc', this)">ГОЛОВНА</button>
             <button class="tab-btn" onclick="openTab('catalog', this)">📖 КАТАЛОГ</button>
-            <button class="tab-btn" onclick="openTab('cart', this)">🛒 КОШИК (<span id="cart-count">0</span>)</button>
             <button class="tab-btn" onclick="openTab('storage', this)">📦 СКЛАД</button>
         </div>
 
         <div id="calc" class="card tab-content" style="display:block">
             <input type="text" id="p_name" placeholder="Назва моделі">
             <input type="text" id="p_desc" placeholder="Опис" style="margin-top:8px;">
+            
+            <div class="file-input-wrapper">
+                <label>Фото товару</label>
+                <input type="file" id="p_file" accept="image/*" onchange="handleFile(this)">
+                <img id="img_preview">
+            </div>
+
             <div class="row">
                 <div><label>Категорія</label><select id="p_cat"><option value="Дім">🏠 Дім</option><option value="Брелоки">🔑 Брелоки</option><option value="Інше">📦 Інше</option></select></div>
-                <div><label>Опт ціна</label><input type="number" id="p_opt_price" placeholder="₴"></div>
-            </div>
-            <div class="row">
-                <div><label>Ціна пластику</label><input type="number" id="p_price" value="850" oninput="saveSettings()"></div>
-                <div><label>Котушка (г)</label><input type="number" id="spool_w" value="1000" oninput="saveSettings()"></div>
-            </div>
-            <div class="row">
                 <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calc()"></div>
-                <div><label>Брак (%)</label><input type="number" id="fail_percent" value="0" oninput="calc()"></div>
             </div>
             <div class="row">
                 <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
@@ -127,27 +116,47 @@
             </div>
             <label>Націнка (%)</label>
             <input type="range" id="m" min="0" max="500" value="100" oninput="calc()">
+            
             <div class="row" style="margin-top:15px">
-                <button class="main-btn" onclick="addToCart()" style="flex:2">У КОШИК</button>
-                <button class="main-btn" onclick="saveToCatalog()" style="background:#444; flex:1">💾 В МАГАЗ</button>
+                <button class="main-btn" onclick="saveToCatalog()">💾 ЗБЕРЕГТИ В МАГАЗИН</button>
+            </div>
+
+            <div style="display:none">
+                <input type="number" id="p_price" value="850">
+                <input type="number" id="spool_w" value="1000">
+                <input type="number" id="fail_percent" value="0">
+                <input type="number" id="val_amort" value="5">
+                <input type="number" id="val_light" value="1">
+                <input type="number" id="val_work_hour" value="50">
+                <input type="number" id="val_adhesion" value="3">
             </div>
         </div>
 
         <div id="catalog" class="card tab-content" style="display:none"><div id="catalog-list"></div></div>
-        <div id="cart" class="card tab-content" style="display:none"><div id="cart-list"></div></div>
         <div id="storage" class="card tab-content" style="display:none">
-            <label>Амортизація (₴/год)</label><input type="number" id="val_amort" value="5" oninput="saveSettings()">
-            <label>Електрика (₴/год)</label><input type="number" id="val_light" value="1" oninput="saveSettings()">
-            <label>Робота (₴/фікс)</label><input type="number" id="val_work_hour" value="50" oninput="saveSettings()">
-            <label>Адгезія (₴/запуск)</label><input type="number" id="val_adhesion" value="3" oninput="saveSettings()">
+            <p style="font-size: 12px; color: var(--gray);">Налаштування калькулятора (зберігаються автоматично)</p>
+            <label>Ціна пластику</label><input type="number" id="p_price_s" value="850" oninput="syncAndSave()">
+            <label>Амортизація (₴/год)</label><input type="number" id="val_amort_s" value="5" oninput="syncAndSave()">
         </div>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
         let catalog = JSON.parse(localStorage.getItem('dryguny_catalog') || '[]');
-        let cart = JSON.parse(localStorage.getItem('dryguny_cart') || '[]');
-        let clientCart = [];
+        let currentImageData = ""; // Тимчасове сховище для фото
+
+        function handleFile(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageData = e.target.result;
+                    const preview = document.getElementById('img_preview');
+                    preview.src = currentImageData;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
 
         function showView(id, btn) {
             document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
@@ -190,12 +199,18 @@
                 name: name,
                 desc: document.getElementById('p_desc').value,
                 category: document.getElementById('p_cat').value,
-                calculated_price: d.final
+                calculated_price: d.final,
+                image: currentImageData // Зберігаємо фото
             };
             catalog = catalog.filter(i => i.name !== name);
             catalog.unshift(model);
             localStorage.setItem('dryguny_catalog', JSON.stringify(catalog));
-            alert("Товар додано в магазин!");
+            
+            // Очищення
+            currentImageData = "";
+            document.getElementById('img_preview').style.display = 'none';
+            document.getElementById('p_file').value = "";
+            alert("Товар з фото додано!");
         }
 
         function renderPublicShop(filter = 'Всі') {
@@ -203,14 +218,20 @@
             const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
             list.innerHTML = filtered.map(item => `
                 <div class="product-card">
-                    <div class="product-img" style="display:flex; align-items:center; justify-content:center; font-weight:bold; color:#777;">3D</div>
+                    ${item.image ? `<img src="${item.image}" class="product-img">` : `<div class="product-img" style="display:flex; align-items:center; justify-content:center; font-weight:bold; color:#777;">НЕМАЄ ФОТО</div>`}
                     <div class="product-info">
                         <div class="product-title">${item.name}</div>
                         <div class="product-desc">${item.desc || ''}</div>
                         <div class="product-price">${item.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="alert('Додано в кошик!')">В КОШИК</button>
+                        <button class="buy-btn" onclick="alert('Додано!')">В КОШИК</button>
                     </div>
                 </div>`).join('');
+        }
+
+        function filterShop(cat, btn) {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderPublicShop(cat);
         }
 
         function openTab(id, btn) {
@@ -224,8 +245,11 @@
         function renderCatalog() {
             document.getElementById('catalog-list').innerHTML = catalog.map((item, i) => `
                 <div class="catalog-item">
-                    <div><b>${item.name}</b><br><small>${item.calculated_price}₴</small></div>
-                    <button onclick="catalog.splice(${i},1); localStorage.setItem('dryguny_catalog', JSON.stringify(catalog)); renderCatalog();" style="color:red; border:none; background:none;">×</button>
+                    <div style="display:flex; align-items:center; gap:10px">
+                        ${item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : ''}
+                        <div><b>${item.name}</b><br><small>${item.calculated_price}₴</small></div>
+                    </div>
+                    <button onclick="catalog.splice(${i},1); localStorage.setItem('dryguny_catalog', JSON.stringify(catalog)); renderCatalog();" style="color:red; border:none; background:none; font-size:20px;">×</button>
                 </div>`).join('');
         }
 
@@ -234,22 +258,8 @@
             document.getElementById('res').innerText = (Math.ceil(p / 10) * 10) + " ₴";
         }
 
-        function saveSettings() {
-            const s = {
-                p_price: document.getElementById('p_price').value,
-                spool_w: document.getElementById('spool_w').value,
-                val_amort: document.getElementById('val_amort').value,
-                val_light: document.getElementById('val_light').value,
-                val_work_hour: document.getElementById('val_work_hour').value,
-                val_adhesion: document.getElementById('val_adhesion').value
-            };
-            localStorage.setItem('dryguny_settings', JSON.stringify(s));
-            calc();
-        }
-
         window.onload = () => {
-            const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
-            for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
+            renderPublicShop();
             calc();
         };
     </script>
