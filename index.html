@@ -31,7 +31,7 @@
 
         #floating-cart { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 15px 20px; border-radius: 30px; font-weight: 900; box-shadow: 0 10px 20px rgba(255,87,34,0.3); z-index: 999; cursor: pointer; display: none; align-items: center; gap: 10px; }
 
-        .price-banner { background: var(--banner-bg); color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+        .price-banner { background: var(--banner-bg); color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; }
         .price-tag { font-size: 52px; font-weight: 900; color: var(--accent); margin: 5px 0; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
         
@@ -56,9 +56,9 @@
         <button onclick="document.body.classList.toggle('dark')" style="background:none; border:none; font-size:20px; cursor:pointer;">🌓</button>
     </div>
 
-    <div class="tabs" id="mode-nav">
+    <div class="tabs" id="mode-nav" style="display:none">
         <button class="tab-btn active" onclick="showView('shop-view', this)">🛍 МАГАЗИН</button>
-        <button class="tab-btn" onclick="showView('admin-view', this)">🔑 АДМІН (КАЛЬК)</button>
+        <button class="tab-btn" id="admin-tab-btn" onclick="showView('admin-view', this)">🔑 АДМІН</button>
     </div>
 
     <div id="shop-view">
@@ -95,11 +95,9 @@
         <div id="calc" class="card tab-content">
             <input type="text" id="p_name" placeholder="Назва моделі">
             <input type="text" id="p_desc" placeholder="Опис" style="margin-top:8px;">
-            
             <label>Фото товару</label>
             <input type="file" accept="image/*" onchange="previewImage(this)">
             <img id="img_preview">
-
             <div class="row">
                 <div><label>Категорія</label><select id="p_cat"><option value="Дім">🏠 Дім</option><option value="Брелоки">🔑 Брелоки</option><option value="Інше">📦 Інше</option></select></div>
                 <div><label>Опт ціна</label><input type="number" id="p_opt_price" placeholder="₴"></div>
@@ -135,10 +133,23 @@
     </div>
 
     <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // ВСТАВ СВІЙ ID ТУТ
+        const ADMIN_ID = 123456789; 
+
         let catalog = JSON.parse(localStorage.getItem('dryguny_catalog') || '[]');
         let cart = JSON.parse(localStorage.getItem('dryguny_cart') || '[]');
         let clientCartCount = 0;
         let currentImg = "";
+
+        function checkAdmin() {
+            const user = tg.initDataUnsafe?.user;
+            if (user && user.id === ADMIN_ID) {
+                document.getElementById('mode-nav').style.display = 'flex';
+            }
+        }
 
         function previewImage(input) {
             const reader = new FileReader();
@@ -187,6 +198,7 @@
             localStorage.setItem('dryguny_catalog', JSON.stringify(catalog));
             alert("Збережено!");
             currentImg = ""; document.getElementById('img_preview').style.display = 'none';
+            renderPublicShop();
         }
 
         function addToCart() {
@@ -195,7 +207,7 @@
             cart.push({ name: name, price: d.final });
             localStorage.setItem('dryguny_cart', JSON.stringify(cart));
             document.getElementById('cart-count').innerText = cart.length;
-            alert("Додано в кошик адміна!");
+            alert("Додано в кошик!");
         }
 
         function renderPublicShop(filter = 'Всі') {
@@ -271,6 +283,7 @@
         }
 
         window.onload = () => {
+            checkAdmin();
             const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
             for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
             renderPublicShop();
