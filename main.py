@@ -7,35 +7,52 @@ import random
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiohttp import web
 
-# 1. НАЛАШТУВАННЯ
+# --- 1. НАЛАШТУВАННЯ ---
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-# Встав свій токен та ID
+# Твій токен та ID (Макс, перевір, щоб ID був твій)
 TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
-ADMIN_ID = 5621405021 # Макс, переконайся, що це твій ID
+ADMIN_ID = 5621405021 
 
 bot = Bot(token=TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
 
-# Сховище для даних товару
-user_data = {}
+# Сховище станів для адмінки (FSM)
+class ShopAdmin(StatesGroup):
+    waiting_for_value = State()  # Очікуємо текст (ціна, назва тощо)
+    waiting_for_photo = State()  # Очікуємо нове фото
 
-# ---------------- КЛАВІАТУРИ ----------------
+# Тимчасове сховище для чернеток товарів
+product_drafts = {}
+
+# --- 2. КЛАВІАТУРИ ---
 
 def get_main_keyboard(user_id):
     web_app_url = "https://dryguny.com.ua" 
     buttons = [[KeyboardButton(text="🛍 ВІДКРИТИ МАГАЗИН", web_app=WebAppInfo(url=web_app_url))]]
     
-    # Кнопка додавання тільки для тебе
     if user_id == ADMIN_ID:
         buttons.append([KeyboardButton(text="📦 Додати товар")])
         
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
-# ---------------- КОМАНДИ ПОШУКУ ----------------
+def get_edit_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✏️ Назва", callback_data="edit_name"), 
+         InlineKeyboardButton(text="✏️ Опис", callback_data="edit_desc")],
+        [InlineKeyboardButton(text="💰 Ціна", callback_data="edit_price"), 
+         InlineKeyboardButton(text="📦 Опт", callback_data="edit_opt")],
+        [InlineKeyboardButton(text="📂 Категорія", callback_data="edit_cat")],
+        [InlineKeyboardButton(text="🖼 Змінити зображення", callback_data="edit_photo")],
+        [InlineKeyboardButton(text="✅ ПІДТВЕРДИТИ ТА В МАГАЗИН", callback_data="confirm_shop")]
+    ])
+
+# --- 3. КОМАНДИ ПОШУКУ ТА ІНФО ---
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
@@ -89,84 +106,112 @@ async def viral_handler(message: types.Message):
 async def top_handler(message: types.Message):
     await message.answer("🏆 **ТОП моделі:**\n• [MakerWorld Hot](https://makerworld.com/en/models)", parse_mode="Markdown")
 
-# ---------------- ЛОГІКА ДОДАВАННЯ ТОВАРУ (ADDTOSHOP) ----------------
+# --- 4. ЛОГІКА ДОДАВАННЯ ТОВАРУ (/addtoshop) ---
 
 @dp.message(Command("addtoshop"))
-async def add_to_shop_link(message: types.Message):
+async def add_to_shop_handler(message: types.Message):
     if message.from_user.id != ADMIN_ID: return
     
     url = message.text.replace("/addtoshop", "").strip()
     if not url:
-        return await message.answer("🔗 Надішли посилання на модель. Наприклад:\n`/addtoshop https://makerworld.com/...`")
+        return await message.answer("🔗 Надішли посилання на модель:\n`/addtoshop https://makerworld.com/...`")
 
-    await message.answer("⏳ Аналізую посилання та генерую опис...")
-    
-    # Логіка генерації як на скріншоті 3
-    gen_name = "Стильний 3D Органайзер"
-    gen_desc = "Чудова модель для вашого робочого столу. Забезпечує ідеальний порядок. Надруковано з високоякісного PLA."
-    
-    user_data[message.from_user.id] = {
-        "name": gen_name,
-        "desc": gen_desc,
+    await message.answer("⏳ Аналізую модель та генерую опис...")
+
+    # Початкова чернетка
+    product_drafts[message.from_user.id] = {
+        "name": "Нова 3D Модель",
+        "desc": "Автоматично згенерований опис. Ви можете змінити його кнопкою нижче.",
         "price": "0",
         "opt": "—",
-        "url": url
+        "cat": "Інше",
+        "img": "https://placehold.jp/24/ff5722/ffffff/600x400.png?text=DRYGUNY_3D" 
     }
 
-    # Клавіатура керування як на скріншоті 3
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✏️ Назва", callback_data="mod_name"), 
-         InlineKeyboardButton(text="✏️ Опис", callback_data="mod_desc")],
-        [InlineKeyboardButton(text="💰 Ціна", callback_data="mod_price"), 
-         InlineKeyboardButton(text="📦 Опт", callback_data="mod_opt")],
-        [InlineKeyboardButton(text="✅ В МАГАЗИН", callback_data="publish_final")]
-    ])
+    await send_product_preview(message.chat.id, message.from_user.id)
 
-    # Заглушка зображення 600x400 як на скріншоті 3
-    await message.answer_photo(
-        photo="https://placehold.jp/600x400.png", 
-        caption=f"🏷 **{gen_name}**\n\n{gen_desc}\n\nЦіна: 0 ₴", 
-        reply_markup=markup,
+async def send_product_preview(chat_id, user_id):
+    data = product_drafts[user_id]
+    caption = (
+        f"🏷 **{data['name']}**\n\n"
+        f"{data['desc']}\n\n"
+        f"💰 Ціна: {data['price']} ₴\n"
+        f"📦 Опт: {data['opt']}\n"
+        f"📂 Категорія: {data['cat']}"
+    )
+    
+    await bot.send_photo(
+        chat_id=chat_id,
+        photo=data['img'],
+        caption=caption,
+        reply_markup=get_edit_keyboard(),
         parse_mode="Markdown"
     )
 
-# ---------------- ОБРОБКА РЕДАГУВАННЯ ----------------
+# --- 5. ОБРОБКА РЕДАГУВАННЯ (TEXT & PHOTO) ---
 
-@dp.callback_query(F.data.startswith("mod_"))
-async def edit_callback(callback: types.CallbackQuery):
+@dp.callback_query(F.data.startswith("edit_"))
+async def start_editing(callback: types.CallbackQuery, state: FSMContext):
     if callback.from_user.id != ADMIN_ID: return
     
-    action = callback.data.split("_")[1]
-    user_data[callback.from_user.id]["last_action"] = action
+    field = callback.data.split("_")[1]
     
-    prompts = {
-        "name": "Введи нову назву товару:",
-        "desc": "Введи новий опис вручну:", # Як на скріншоті 1
-        "price": "Введи ціну (тільки число):",
-        "opt": "Введи умови опту (напр. 150 від 10 шт):"
-    }
+    if field == "photo":
+        await callback.message.answer("🖼 Надішли нове фото для товару:")
+        await state.set_state(ShopAdmin.waiting_for_photo)
+    else:
+        prompts = {
+            "name": "Введи нову назву:", "desc": "Введи опис товару:", 
+            "price": "Введи ціну (цифрами):", "opt": "Введи умови опту:", 
+            "cat": "Введи категорію:"
+        }
+        await state.update_data(editing_field=field)
+        await callback.message.answer(prompts.get(field, "Введи нове значення:"))
+        await state.set_state(ShopAdmin.waiting_for_value)
     
-    await callback.message.answer(prompts.get(action, "Введи дані:"))
     await callback.answer()
 
-@dp.message(lambda m: m.from_user.id == ADMIN_ID and "last_action" in user_data.get(m.from_user.id, {}))
-async def save_modification(message: types.Message):
+# Обробка тексту
+@dp.message(ShopAdmin.waiting_for_value)
+async def process_text_edit(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
-    action = user_data[user_id].pop("last_action")
-    user_data[user_id][action] = message.text
-    
-    await message.answer(f"✅ {action.capitalize()} оновлено!")
-    # Тут можна додати повторний виклик меню для перегляду результату
+    state_data = await state.get_data()
+    field = state_data.get("editing_field")
 
-@dp.callback_query(F.data == "publish_final")
-async def finish_push(callback: types.CallbackQuery):
-    await callback.message.answer("🚀 Товар успішно додано до магазину Dryguny!")
+    product_drafts[user_id][field] = message.text
+    await state.clear()
+    await message.answer(f"✅ {field} оновлено!")
+    await send_product_preview(message.chat.id, user_id)
+
+# Обробка фото
+@dp.message(ShopAdmin.waiting_for_photo, F.photo)
+async def process_photo_edit(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    photo_id = message.photo[-1].file_id # Беремо найкращу якість
+
+    product_drafts[user_id]["img"] = photo_id
+    await state.clear()
+    await message.answer("✅ Фото успішно змінено!")
+    await send_product_preview(message.chat.id, user_id)
+
+# --- 6. ПІДТВЕРДЖЕННЯ ---
+
+@dp.callback_query(F.data == "confirm_shop")
+async def finish_and_publish(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    data = product_drafts.get(user_id)
+    
+    if data:
+        # Тут можна додати код для збереження в БД або відправки в адмін-канал
+        await callback.message.answer(f"🚀 **ТОВАР ОПУБЛІКОВАНО!**\n\n'{data['name']}' тепер у магазині.")
+        del product_drafts[user_id]
+    
     await callback.answer()
 
-# ---------------- ВЕБ-СЕРВЕР (RENDER) ----------------
+# --- 7. ЗАПУСК (ВЕБ-СЕРВЕР ДЛЯ RENDER) ---
 
 async def handle_ping(request):
-    return web.Response(text="Dryguny Hub is Online! 🚀")
+    return web.Response(text="Dryguny Bot is Online! 🚀")
 
 async def main():
     app = web.Application()
