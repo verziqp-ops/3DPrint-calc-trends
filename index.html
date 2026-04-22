@@ -31,6 +31,10 @@
 
         #floating-cart { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 15px 20px; border-radius: 30px; font-weight: 900; box-shadow: 0 10px 20px rgba(255,87,34,0.3); z-index: 999; cursor: pointer; display: none; align-items: center; gap: 10px; }
 
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 28px; width: 100%; max-width: 400px; position: relative; }
+
         .price-banner { background: var(--banner-bg); color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; }
         .price-tag { font-size: 52px; font-weight: 900; color: var(--accent); margin: 5px 0; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
@@ -71,8 +75,20 @@
         <div class="shop-grid" id="public-shop-list"></div>
     </div>
 
-    <div id="floating-cart" onclick="alert('Оформлення замовлення...')">
+    <div id="floating-cart" onclick="openOrderModal()">
         <span>🛒</span> <span id="client-cart-count">0</span> <span>ОФОРМИТИ</span>
+    </div>
+
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; font-size:18px;">Оформлення замовлення</h2>
+            <label>Ваш номер телефону</label>
+            <input type="tel" id="order-phone" placeholder="+380 00 000 00 00">
+            <label>ПІБ або назва ФОП</label>
+            <input type="text" id="order-fop" placeholder="Іван Іванов">
+            <button class="main-btn" onclick="checkout()">ЗАМОВИТИ</button>
+            <button class="main-btn" style="background:#444; margin-top:10px;" onclick="document.getElementById('order-modal').style.display='none'">СКАСУВАТИ</button>
+        </div>
     </div>
 
     <div id="admin-view" style="display:none">
@@ -140,8 +156,8 @@
         const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
 
         let catalog = [];
+        let clientCart = []; // Окремий кошик для клієнтів
         let cart = JSON.parse(localStorage.getItem('dryguny_cart') || '[]');
-        let clientCartCount = 0;
         let currentImg = "";
 
         async function loadSharedCatalog() {
@@ -230,6 +246,41 @@
             alert("Додано в кошик!");
         }
 
+        function addClientToCart(name, price) {
+            clientCart.push({ name, price });
+            document.getElementById('client-cart-count').innerText = clientCart.length;
+            document.getElementById('floating-cart').style.display = 'flex';
+        }
+
+        function openOrderModal() {
+            document.getElementById('order-modal').style.display = 'flex';
+        }
+
+        function checkout() {
+            const phone = document.getElementById('order-phone').value;
+            const fop = document.getElementById('order-fop').value;
+            
+            if(!phone || !fop) return alert("Заповніть всі поля!");
+            
+            let totalSum = clientCart.reduce((sum, item) => sum + item.price, 0);
+            let itemsList = clientCart.map(i => i.name).join(", ");
+            
+            let orderData = {
+                items: itemsList,
+                fop: fop,
+                phone: phone,
+                total: totalSum
+            };
+
+            // Відправка даних боту
+            tg.sendData(JSON.stringify(orderData));
+            
+            document.getElementById('order-modal').style.display = 'none';
+            clientCart = [];
+            document.getElementById('floating-cart').style.display = 'none';
+            alert("Замовлення надіслано!");
+        }
+
         function renderPublicShop(filter = 'Всі') {
             const list = document.getElementById('public-shop-list');
             const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
@@ -239,7 +290,7 @@
                     <div class="product-info">
                         <div class="product-title">${item.name}</div>
                         <div class="product-price">${item.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="clientCartCount++; document.getElementById('client-cart-count').innerText=clientCartCount; document.getElementById('floating-cart').style.display='flex';">В КОШИК</button>
+                        <button class="buy-btn" onclick="addClientToCart('${item.name}', ${item.calculated_price})">В КОШИК</button>
                     </div>
                 </div>`).join('');
         }
