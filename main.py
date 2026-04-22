@@ -13,26 +13,29 @@ from aiohttp import web
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Встав свій токен та ID
 TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
-ADMIN_ID = 6259271140 # Твій ID
+ADMIN_ID = 5621405021 # Макс, переконайся, що це твій ID
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+# Сховище для даних товару
 user_data = {}
 
 # ---------------- КЛАВІАТУРИ ----------------
 
 def get_main_keyboard(user_id):
-    web_app_url = "https://dryguny.com.ua" # Твій Mini App
+    web_app_url = "https://dryguny.com.ua" 
     buttons = [[KeyboardButton(text="🛍 ВІДКРИТИ МАГАЗИН", web_app=WebAppInfo(url=web_app_url))]]
     
+    # Кнопка додавання тільки для тебе
     if user_id == ADMIN_ID:
         buttons.append([KeyboardButton(text="📦 Додати товар")])
         
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
-# ---------------- КОМАНДИ ПОШУКУ (ЯКІ БУЛИ) ----------------
+# ---------------- КОМАНДИ ПОШУКУ ----------------
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
@@ -86,7 +89,7 @@ async def viral_handler(message: types.Message):
 async def top_handler(message: types.Message):
     await message.answer("🏆 **ТОП моделі:**\n• [MakerWorld Hot](https://makerworld.com/en/models)", parse_mode="Markdown")
 
-# ---------------- ЛОГІКА ADDTOSHOP (ПО ПОСИЛАННЮ) ----------------
+# ---------------- ЛОГІКА ДОДАВАННЯ ТОВАРУ (ADDTOSHOP) ----------------
 
 @dp.message(Command("addtoshop"))
 async def add_to_shop_link(message: types.Message):
@@ -94,53 +97,76 @@ async def add_to_shop_link(message: types.Message):
     
     url = message.text.replace("/addtoshop", "").strip()
     if not url:
-        return await message.answer("🔗 Надішли посилання на модель після команди. Наприклад:\n`/addtoshop https://makerworld.com/...`")
+        return await message.answer("🔗 Надішли посилання на модель. Наприклад:\n`/addtoshop https://makerworld.com/...`")
 
     await message.answer("⏳ Аналізую посилання та генерую опис...")
     
-    # Імітація парсингу та ШІ
-    generated_name = "Стильний 3D Органайзер"
-    generated_desc = "Чудова модель для вашого робочого столу. Забезпечує ідеальний порядок. Надруковано з високоякісного PLA."
-    dummy_photo = "https://placehold.jp/600x400.png" # Тут буде фото з посилання
-
+    # Логіка генерації як на скріншоті 3
+    gen_name = "Стильний 3D Органайзер"
+    gen_desc = "Чудова модель для вашого робочого столу. Забезпечує ідеальний порядок. Надруковано з високоякісного PLA."
+    
     user_data[message.from_user.id] = {
-        "name": generated_name,
-        "desc": generated_desc,
-        "price": "0", "opt": "—"
+        "name": gen_name,
+        "desc": gen_desc,
+        "price": "0",
+        "opt": "—",
+        "url": url
     }
 
+    # Клавіатура керування як на скріншоті 3
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✏️ Назва", callback_data="mod_name"), InlineKeyboardButton(text="✏️ Опис", callback_data="mod_desc")],
-        [InlineKeyboardButton(text="💰 Ціна", callback_data="mod_price"), InlineKeyboardButton(text="📦 Опт", callback_data="mod_opt")],
-        [InlineKeyboardButton(text="✅ В МАГАЗИН", callback_data="finish")]
+        [InlineKeyboardButton(text="✏️ Назва", callback_data="mod_name"), 
+         InlineKeyboardButton(text="✏️ Опис", callback_data="mod_desc")],
+        [InlineKeyboardButton(text="💰 Ціна", callback_data="mod_price"), 
+         InlineKeyboardButton(text="📦 Опт", callback_data="mod_opt")],
+        [InlineKeyboardButton(text="✅ В МАГАЗИН", callback_data="publish_final")]
     ])
 
-    await message.answer_photo(dummy_photo, caption=f"🏷 **{generated_name}**\n\n{generated_desc}\n\nЦіна: 0 ₴", reply_markup=markup)
+    # Заглушка зображення 600x400 як на скріншоті 3
+    await message.answer_photo(
+        photo="https://placehold.jp/600x400.png", 
+        caption=f"🏷 **{gen_name}**\n\n{gen_desc}\n\nЦіна: 0 ₴", 
+        reply_markup=markup,
+        parse_mode="Markdown"
+    )
 
 # ---------------- ОБРОБКА РЕДАГУВАННЯ ----------------
 
 @dp.callback_query(F.data.startswith("mod_"))
-async def edit_call(callback: types.CallbackQuery):
+async def edit_callback(callback: types.CallbackQuery):
+    if callback.from_user.id != ADMIN_ID: return
+    
     action = callback.data.split("_")[1]
     user_data[callback.from_user.id]["last_action"] = action
-    await callback.message.answer(f"Введіть нове значення:")
+    
+    prompts = {
+        "name": "Введи нову назву товару:",
+        "desc": "Введи новий опис вручну:", # Як на скріншоті 1
+        "price": "Введи ціну (тільки число):",
+        "opt": "Введи умови опту (напр. 150 від 10 шт):"
+    }
+    
+    await callback.message.answer(prompts.get(action, "Введи дані:"))
     await callback.answer()
 
 @dp.message(lambda m: m.from_user.id == ADMIN_ID and "last_action" in user_data.get(m.from_user.id, {}))
-async def save_edit(message: types.Message):
-    action = user_data[message.from_user.id].pop("last_action")
-    user_data[message.from_user.id][action] = message.text
-    await message.answer("✅ Дані оновлено! Надішли `/addtoshop [посилання]` знову для перевірки або тисни завершити.")
+async def save_modification(message: types.Message):
+    user_id = message.from_user.id
+    action = user_data[user_id].pop("last_action")
+    user_data[user_id][action] = message.text
+    
+    await message.answer(f"✅ {action.capitalize()} оновлено!")
+    # Тут можна додати повторний виклик меню для перегляду результату
 
-@dp.callback_query(F.data == "finish")
+@dp.callback_query(F.data == "publish_final")
 async def finish_push(callback: types.CallbackQuery):
-    await callback.message.answer("🚀 Товар успішно додано до твоєї бази Mini App!")
+    await callback.message.answer("🚀 Товар успішно додано до магазину Dryguny!")
     await callback.answer()
 
-# ---------------- ВЕБ-СЕРВЕР ----------------
+# ---------------- ВЕБ-СЕРВЕР (RENDER) ----------------
 
 async def handle_ping(request):
-    return web.Response(text="Dryguny Bot is Running! 🚀")
+    return web.Response(text="Dryguny Hub is Online! 🚀")
 
 async def main():
     app = web.Application()
@@ -149,6 +175,7 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080)))
     await site.start()
+    
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
