@@ -124,7 +124,7 @@
 
         <div id="calc" class="card tab-content" style="display:none">
             <input type="text" id="p_name" placeholder="Назва моделі">
-            <input type="text" id="p_desc" placeholder="Опис (без тех. деталей)">
+            <input type="text" id="p_desc" placeholder="Опис">
             <label>Фото товару</label>
             <input type="file" accept="image/*" onchange="previewImage(this)">
             <img id="img_preview">
@@ -141,6 +141,165 @@
                 <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calc()"></div>
                 <div><label>Адгезія (₴)</label><input type="number" id="val_adhesion" value="3" oninput="saveSettings()"></div>
             </div>
+            <div class="row">
+                <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
+                <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
+            </div>
+            <label>Націнка: <span id="m_val">100</span>%</label>
+            <input type="range" id="m" min="0" max="500" value="100" oninput="document.getElementById('m_val').innerText=this.value; calc()">
+            
+            <button class="main-btn" onclick="saveToCatalog()">💾 ЗБЕРЕГТИ В МАГАЗИН</button>
+        </div>
+
+        <div id="catalog" class="card tab-content" style="display:none"><div id="catalog-list"></div></div>
+        
+        <div id="storage" class="card tab-content" style="display:none">
+            <label>Амортизація (₴/год)</label><input type="number" id="val_amort" value="5" oninput="saveSettings()">
+            <label>Електрика (₴/год)</label><input type="number" id="val_light" value="1" oninput="saveSettings()">
+            <label>Робота (₴/фікс)</label><input type="number" id="val_work_hour" value="50" oninput="saveSettings()">
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        const ADMIN_ID = 6259271140; 
+        const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
+
+        let catalog = [];
+        let clientCart = []; 
+        let currentImg = "";
+
+        function updateClientCartUI() {
+            document.getElementById('client-cart-count').innerText = clientCart.length;
+            document.getElementById('floating-cart').style.display = clientCart.length > 0 ? 'flex' : 'none';
+        }
+
+        function openProductDetails(id) {
+            const item = catalog.find(i => i.id == id);
+            if(!item) return;
+            const content = document.getElementById('product-detail-content');
+            content.innerHTML = `
+                <img src="${item.img || ''}" class="full-img">
+                <h2 style="margin:0 0 10px;">${item.name}</h2>
+                <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">${item.description || 'Опис відсутній'}</p>
+                <div style="display:flex; align-items:center; gap:15px; background:var(--input); padding:15px; border-radius:18px;">
+                    <div><label style="margin:0;">К-сть</label><input type="number" id="modal-qty" value="1" min="1" class="qty-input"></div>
+                    <div style="flex-grow:1; text-align:right;"><div style="font-size:22px; font-weight:900; color:var(--accent);">${item.calculated_price} ₴</div></div>
+                </div>
+                <button class="main-btn" onclick="addToCartWithQty('${item.name}', ${item.calculated_price})">ДОДАТИ</button>
+            `;
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        function addToCartWithQty(name, price) {
+            const qty = parseInt(document.getElementById('modal-qty').value) || 1;
+            for(let i=0; i<qty; i++) clientCart.push({ name, price });
+            updateClientCartUI();
+            document.getElementById('product-modal').style.display = 'none';
+        }
+
+        function addClientToCart(event, name, price) {
+            event.stopPropagation();
+            clientCart.push({ name, price });
+            updateClientCartUI();
+        }
+
+        function openOrderModal() {
+            document.getElementById('order-modal').style.display = 'flex';
+            document.getElementById('client-cart-list').innerHTML = clientCart.map((item, index) => `
+                <div class="item-row"><span>${item.name}</span><button onclick="clientCart.splice(${index},1);openOrderModal();updateClientCartUI()" style="color:red;border:none;background:none">✕</button></div>`).join('');
+        }
+
+        async function checkout() {
+            const phone = document.getElementById('order-phone').value;
+            const fop = document.getElementById('order-fop').value;
+            if(!phone || !fop || clientCart.length === 0) return alert("Заповніть дані");
+            const order = { id: Date.now(), phone, fop, items: clientCart.map(i => i.name).join(", "), total: clientCart.reduce((s,i)=>s+i.price,0) };
+            await fetch(`${DB_URL}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
+            alert("Замовлення надіслано!");
+            clientCart = []; updateClientCartUI(); document.getElementById('order-modal').style.display = 'none';
+        }
+
+        function calc() {
+            let pPrice = parseFloat(document.getElementById('p_price').value) || 0;
+            let spoolW = parseFloat(document.getElementById('spool_w').value) || 1000;
+            let w = parseFloat(document.getElementById('w').value) || 0;
+            let h = parseFloat(document.getElementById('t_h').value) || 0;
+            let min = parseFloat(document.getElementById('t_m').value) || 0;
+            let m = parseFloat(document.getElementById('m').value);
+            let plasticCost = w * (pPrice/spoolW);
+            let techCost = (h + min/60) * (parseFloat(document.getElementById('val_amort').value) + parseFloat(document.getElementById('val_light').value));
+            let cost = plasticCost + techCost + parseFloat(document.getElementById('val_work_hour').value);
+            let final = (plasticCost + techCost) * (1 + m/100) + parseFloat(document.getElementById('val_work_hour').value);
+            document.getElementById('res').innerText = Math.round(final) + " ₴";
+            document.getElementById('total_cost').innerText = Math.round(cost);
+            document.getElementById('profit_val').innerText = Math.round(final - cost);
+            return Math.round(final);
+        }
+
+        async function saveToCatalog() {
+            let name = document.getElementById('p_name').value;
+            if(!name) return alert("Введи назву");
+            let product = { id: Date.now(), name, description: document.getElementById('p_desc').value, category: document.getElementById('p_cat').value, calculated_price: calc(), img: currentImg };
+            await fetch(`${DB_URL}/catalog/${product.id}.json`, { method: 'PUT', body: JSON.stringify(product) });
+            alert("Збережено!"); loadSharedCatalog();
+        }
+
+        function previewImage(input) {
+            const reader = new FileReader();
+            reader.onload = e => { currentImg = e.target.result; document.getElementById('img_preview').src = currentImg; document.getElementById('img_preview').style.display = 'block'; };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        async function loadSharedCatalog() {
+            const res = await fetch(`${DB_URL}/catalog.json`);
+            const data = await res.json();
+            catalog = data ? Object.values(data) : [];
+            renderPublicShop();
+        }
+
+        function renderPublicShop(filter = 'Всі') {
+            const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
+            document.getElementById('public-shop-list').innerHTML = filtered.map(i => `
+                <div class="product-card" onclick="openProductDetails(${i.id})">
+                    <img src="${i.img || ''}" class="product-img">
+                    <div class="product-info">
+                        <div class="product-title">${i.name}</div>
+                        <div class="product-price">${i.calculated_price} ₴</div>
+                        <button class="buy-btn" onclick="addClientToCart(event, '${i.name}', ${i.calculated_price})">В КОШИК</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function showView(id, btn) {
+            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
+            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
+            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(id === 'admin-view') loadOrders();
+        }
+
+        function openTab(id, btn) {
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        async function loadOrders() {
+            const res = await fetch(`${DB_URL}/orders.json`);
+            const data = await res.json();
+            document.getElementById('orders-list').innerHTML = data ? Object.values(data).reverse().map(o => `
+                <div class="order-box"><b>${o.fop}</b><br>${o.phone}<br><small>${o.items}</small><br><b>${o.total} ₴</b></div>`).join('') : "Замовлень немає";
+        }
+
+        window.onload = () => {
+            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) document.getElementById('mode-nav').style.display = 'flex';
+            loadSharedCatalog();
+        };
+    </script>
+</body>
+</html>
             <div class="row">
                 <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
                 <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
