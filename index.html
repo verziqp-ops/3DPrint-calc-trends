@@ -22,7 +22,7 @@
         .cat-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
+        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; cursor: pointer; }
         .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: var(--input); }
         .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
         .product-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
@@ -53,6 +53,9 @@
         .order-box { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 12px; border: 1px solid var(--border); }
         .btn-action { padding: 8px; border-radius: 10px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         #img_preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; aspect-ratio: 1/1; object-fit: cover; border: 1px solid var(--accent); }
+        
+        .full-img { width: 100%; border-radius: 15px; object-fit: contain; max-height: 350px; background: #eee; margin-bottom: 15px; }
+        .qty-input { width: 80px !important; text-align: center; margin-bottom: 0 !important; }
     </style>
 </head>
 <body class="dark">
@@ -65,6 +68,10 @@
     <div class="tabs" id="mode-nav" style="display:none">
         <button class="tab-btn active" onclick="showView('shop-view', this)">🛍 МАГАЗИН</button>
         <button class="tab-btn" onclick="showView('admin-view', this)">🔑 АДМІН</button>
+    </div>
+
+    <div id="product-modal" class="modal" onclick="if(event.target==this) this.style.display='none'">
+        <div class="modal-content" id="product-detail-content"></div>
     </div>
 
     <div id="shop-view">
@@ -117,7 +124,7 @@
 
         <div id="calc" class="card tab-content" style="display:none">
             <input type="text" id="p_name" placeholder="Назва моделі">
-            <input type="text" id="p_desc" placeholder="Опис">
+            <input type="text" id="p_desc" placeholder="Опис (без тех. деталей)">
             <label>Фото товару</label>
             <input type="file" accept="image/*" onchange="previewImage(this)">
             <img id="img_preview">
@@ -162,14 +169,48 @@
         let clientCart = JSON.parse(localStorage.getItem('dryguny_client_cart') || '[]'); 
         let currentImg = "";
 
-        // --- КЛІЄНТСЬКА ЧАСТИНА ---
         function updateClientCartUI() {
             localStorage.setItem('dryguny_client_cart', JSON.stringify(clientCart));
             document.getElementById('client-cart-count').innerText = clientCart.length;
             document.getElementById('floating-cart').style.display = clientCart.length > 0 ? 'flex' : 'none';
         }
 
-        function addClientToCart(name, price) {
+        // Відкриття детальної картки
+        function openProductDetails(id) {
+            const item = catalog.find(i => i.id == id);
+            if(!item) return;
+            const content = document.getElementById('product-detail-content');
+            content.innerHTML = `
+                <img src="${item.img || ''}" class="full-img">
+                <h2 style="margin:0 0 10px;">${item.name}</h2>
+                <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">${item.description || 'Опис відсутній'}</p>
+                <div style="display:flex; align-items:center; gap:15px; background:var(--input); padding:15px; border-radius:18px;">
+                    <div>
+                        <label style="margin:0 0 5px;">Кількість</label>
+                        <input type="number" id="modal-qty" value="1" min="1" class="qty-input">
+                    </div>
+                    <div style="flex-grow:1; text-align:right;">
+                        <div style="font-size:12px; color:var(--gray);">Ціна за шт.</div>
+                        <div style="font-size:22px; font-weight:900; color:var(--accent);">${item.calculated_price} ₴</div>
+                    </div>
+                </div>
+                <button class="main-btn" onclick="addToCartWithQty('${item.name}', ${item.calculated_price})">ДОДАТИ В КОШИК</button>
+                <button class="main-btn" style="background:#444; margin-top:10px;" onclick="document.getElementById('product-modal').style.display='none'">ЗАКРИТИ</button>
+            `;
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        function addToCartWithQty(name, price) {
+            const qty = parseInt(document.getElementById('modal-qty').value) || 1;
+            for(let i=0; i<qty; i++) {
+                clientCart.push({ id: Date.now() + i, name, price });
+            }
+            updateClientCartUI();
+            document.getElementById('product-modal').style.display = 'none';
+        }
+
+        function addClientToCart(event, name, price) {
+            event.stopPropagation(); // щоб не відкривалась модалка при кліку суто на кнопку
             clientCart.push({ id: Date.now(), name, price });
             updateClientCartUI();
         }
@@ -194,9 +235,16 @@
             const fop = document.getElementById('order-fop').value;
             if(!phone || !fop || clientCart.length === 0) return alert("Заповніть дані!");
 
+            // ГРУПУВАННЯ ДЛЯ АДМІНКИ
+            const grouped = clientCart.reduce((acc, item) => {
+                acc[item.name] = (acc[item.name] || 0) + 1;
+                return acc;
+            }, {});
+            const itemsText = Object.entries(grouped).map(([n, q]) => `${n} (${q} шт)`).join(", ");
+
             const order = {
                 id: Date.now(), phone, fop,
-                items: clientCart.map(i => i.name).join(", "),
+                items: itemsText,
                 total: clientCart.reduce((s, i) => s + i.price, 0)
             };
 
@@ -240,9 +288,13 @@
             const data = await res.json();
             const list = document.getElementById('orders-list');
             if(!data) return list.innerHTML = "Замовлень немає";
-            list.innerHTML = Object.values(data).map(o => `
+            list.innerHTML = Object.values(data).reverse().map(o => `
                 <div class="order-box">
-                    <b>👤 ${o.fop}</b><br>📞 ${o.phone}<br>📦 ${o.items}<br>💰 <b>${o.total} ₴</b><br>
+                    <b>👤 ${o.fop}</b><br>📞 ${o.phone}<br>
+                    <div style="background:var(--card-bg); padding:8px; border-radius:10px; margin:8px 0; font-size:12px;">
+                        📦 ${o.items}
+                    </div>
+                    💰 <b>${o.total} ₴</b><br>
                     <button class="btn-action" style="background:#4caf50;color:white;" onclick="copyOrder('${o.fop}', '${o.phone}', '${o.items}', '${o.total}')">📋 КОПІЮВАТИ</button>
                     <button class="btn-action" style="background:#f44336;color:white;" onclick="deleteOrder('${o.id}')">✕</button>
                 </div>`).join('');
@@ -259,10 +311,11 @@
 
         async function saveToCatalog() {
             let name = document.getElementById('p_name').value;
+            let desc = document.getElementById('p_desc').value;
             if(!name) return alert("Введи назву!");
             let d = calc();
             let newProduct = {
-                id: Date.now(), name, category: document.getElementById('p_cat').value,
+                id: Date.now(), name, description: desc, category: document.getElementById('p_cat').value,
                 calculated_price: d.final, img: currentImg
             };
             await fetch(`${DB_URL}/catalog/${newProduct.id}.json`, { method: 'PUT', body: JSON.stringify(newProduct) });
@@ -281,84 +334,4 @@
         }
 
         function roundPrice() {
-            let p = parseInt(document.getElementById('res').innerText);
-            document.getElementById('res').innerText = (Math.ceil(p / 10) * 10) + " ₴";
-        }
-
-        function saveSettings() {
-            const s = {};
-            ['p_price','spool_w','val_amort','val_light','val_work_hour','val_adhesion'].forEach(id => {
-                s[id] = document.getElementById(id).value;
-            });
-            localStorage.setItem('dryguny_settings', JSON.stringify(s));
-            calc();
-        }
-
-        async function loadSharedCatalog() {
-            const res = await fetch(`${DB_URL}/catalog.json`);
-            const data = await res.json();
-            catalog = data ? Object.values(data) : [];
-            renderPublicShop();
-        }
-
-        function renderPublicShop(filter = 'Всі') {
-            const list = document.getElementById('public-shop-list');
-            const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
-            list.innerHTML = filtered.map(item => `
-                <div class="product-card">
-                    ${item.img ? `<img src="${item.img}" class="product-img">` : `<div class="product-img" style="display:flex;align-items:center;justify-content:center;">3D</div>`}
-                    <div class="product-info">
-                        <div class="product-title">${item.name}</div>
-                        <div class="product-price">${item.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="addClientToCart('${item.name}', ${item.calculated_price})">В КОШИК</button>
-                    </div>
-                </div>`).join('');
-        }
-
-        function filterShop(cat, btn) {
-            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            renderPublicShop(cat);
-        }
-
-        function showView(id, btn) {
-            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
-            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
-            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'admin-view') loadOrders();
-        }
-
-        function openTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'catalog') renderCatalogList();
-        }
-
-        function renderCatalogList() {
-            document.getElementById('catalog-list').innerHTML = catalog.map(i => `
-                <div class="item-row">
-                    <span>${i.name} (${i.calculated_price} ₴)</span>
-                    <button onclick="deleteProduct('${i.id}')" style="color:red;border:none;background:none;">✕</button>
-                </div>`).join('');
-        }
-
-        async function deleteProduct(id) {
-            await fetch(`${DB_URL}/catalog/${id}.json`, { method: 'DELETE' });
-            loadSharedCatalog();
-            renderCatalogList();
-        }
-
-        window.onload = () => {
-            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) document.getElementById('mode-nav').style.display = 'flex';
-            const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
-            for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
-            loadSharedCatalog();
-            updateClientCartUI();
-            calc();
-        };
-    </script>
-</body>
-</html>
+    
