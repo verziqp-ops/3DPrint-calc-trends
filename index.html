@@ -2,312 +2,288 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Pro v43.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dryguny Ultra v47.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
-            --accent: #ff5722; --bg: #0f0f0f; --card-bg: #1a1a1a; 
-            --text: #f0f0f0; --gray: #777; --input: #262626; --border: rgba(255,255,255,0.05);
+            --accent: #ff5722; --bg: #0b0b0b; --card-bg: #161616; 
+            --text: #ffffff; --gray: #888; --input: #222222; --border: rgba(255,255,255,0.08);
+            --success: #4caf50; --danger: #f44336;
         }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 120px; }
         
-        /* Navigation */
-        .main-nav { display: none; gap: 8px; margin-bottom: 20px; background: var(--input); padding: 5px; border-radius: 15px; }
-        .nav-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; }
+        /* Nav */
+        .main-nav { display: none; gap: 10px; margin-bottom: 25px; background: var(--input); padding: 6px; border-radius: 18px; border: 1px solid var(--border); }
+        .nav-btn { flex: 1; padding: 14px; border: none; border-radius: 14px; background: none; color: var(--gray); font-weight: 700; cursor: pointer; transition: 0.3s; }
         .nav-btn.active { background: var(--accent); color: white; }
 
-        /* Shop Grid */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
-        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #222; }
-        .product-info { padding: 12px; }
-        .product-title { font-size: 13px; font-weight: bold; margin-bottom: 5px; height: 35px; overflow: hidden; }
-        .product-price { color: var(--accent); font-weight: 900; font-size: 16px; margin-bottom: 10px; }
+        /* Shop */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .product-card { background: var(--card-bg); border-radius: 24px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s; }
+        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #111; }
+        .product-info { padding: 14px; }
+        .product-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .product-price { color: var(--accent); font-weight: 900; font-size: 18px; }
         
-        /* Admin Sections */
+        /* Admin */
+        .admin-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .sub-tab { padding: 10px 18px; background: var(--input); border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--gray); border: 1px solid var(--border); white-space: nowrap; }
+        .sub-tab.active { background: #2a2a2a; color: white; border-color: var(--accent); }
         .admin-section { display: none; }
         .admin-section.active { display: block; }
-        .admin-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
-        .sub-tab { padding: 8px 15px; background: var(--input); border-radius: 10px; font-size: 11px; cursor: pointer; color: var(--gray); border: 1px solid var(--border); white-space: nowrap; }
-        .sub-tab.active { background: #333; color: white; border-color: var(--accent); }
 
-        /* UI Elements */
-        .card { background: var(--card-bg); border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
-        label { display: block; font-size: 10px; color: var(--gray); font-weight: bold; margin: 10px 0 5px 5px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--input); color: white; box-sizing: border-box; font-size: 14px; }
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .main-btn { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        /* Forms */
+        .card { background: var(--card-bg); border-radius: 24px; padding: 18px; border: 1px solid var(--border); margin-bottom: 15px; }
+        label { display: block; font-size: 10px; color: var(--gray); font-weight: 800; margin: 12px 0 6px 6px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 15px; border-radius: 16px; border: 1px solid var(--border); background: var(--input); color: white; box-sizing: border-box; font-size: 15px; }
+        .row { display: flex; gap: 12px; margin-bottom: 5px; }
+        .main-btn { background: var(--accent); color: white; border: none; padding: 16px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
         
-        /* Floating Cart */
-        #cart-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 20px rgba(255,87,34,0.4); }
+        /* Stats */
+        .price-big { font-size: 48px; font-weight: 950; color: var(--accent); text-align: center; margin: 15px 0; }
+        .stats-box { display: flex; justify-content: space-around; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 18px; margin-bottom: 20px; }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 10px; color: var(--gray); text-transform: uppercase; }
+        .stat-value { font-size: 16px; font-weight: 800; margin-top: 4px; }
 
-        /* Modals */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .modal-content { background: var(--card-bg); border-radius: 25px; padding: 20px; max-width: 400px; margin: auto; }
-
-        .order-item { background: var(--input); padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .price-big { font-size: 40px; font-weight: 900; color: var(--accent); text-align: center; margin: 10px 0; }
+        /* Cart & Modal */
+        #cart-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 18px 32px; border-radius: 40px; font-weight: 900; display: none; z-index: 1000; box-shadow: 0 10px 25px rgba(255,87,34,0.5); }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 2000; padding: 20px; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); border-radius: 30px; padding: 25px; width: 100%; max-width: 420px; }
+        .list-item { background: var(--input); padding: 14px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
     <div class="main-nav" id="admin-nav">
-        <button class="nav-btn active" onclick="switchMainView('shop')">🛍 МАГАЗИН</button>
-        <button class="nav-btn" onclick="switchMainView('admin')">🔐 АДМІНКА</button>
+        <button class="nav-btn active" id="btn-shop" onclick="switchView('shop')">🛍 МАГАЗИН</button>
+        <button class="nav-btn" id="btn-admin" onclick="switchView('admin')">🔒 АДМІН</button>
     </div>
 
     <div id="view-shop">
-        <div style="font-weight: 900; font-size: 20px; margin-bottom: 15px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
-        <div class="shop-grid" id="shop-container">Завантаження товарів...</div>
+        <div style="font-weight: 900; font-size: 24px; margin-bottom: 20px;">DRYGUNY<span style="color:var(--accent)">3D</span></div>
+        <div class="shop-grid" id="shop-container">Завантаження...</div>
     </div>
 
     <div id="view-admin" style="display:none">
         <div class="admin-tabs">
             <div class="sub-tab active" onclick="switchAdminTab('tab-calc', this)">🧮 КАЛЬКУЛЯТОР</div>
-            <div class="sub-tab" onclick="switchAdminTab('tab-orders', this)">📦 ЗАМОВЛЕННЯ</div>
+            <div class="sub-tab" onclick="switchAdminTab('tab-orders', this)">📥 ЗАМОВЛЕННЯ</div>
             <div class="sub-tab" onclick="switchAdminTab('tab-catalog', this)">📖 КАТАЛОГ</div>
-            <div class="sub-tab" onclick="switchAdminTab('tab-storage', this)">⚙️ НАЛАШТУВАННЯ</div>
+            <div class="sub-tab" onclick="switchAdminTab('tab-config', this)">⚙️ НАЛАШТУВАННЯ</div>
         </div>
 
         <div id="tab-calc" class="admin-section active">
             <div class="price-big" id="res-price">0 ₴</div>
+            <div class="stats-box">
+                <div class="stat-item"><div class="stat-label">Собівартість</div><div class="stat-value" id="info-cost">0 ₴</div></div>
+                <div class="stat-item"><div class="stat-label">Прибуток</div><div class="stat-value" id="info-profit" style="color:var(--success)">0 ₴</div></div>
+            </div>
+            
             <div class="card">
                 <input type="text" id="p_name" placeholder="Назва моделі">
                 <textarea id="p_desc" placeholder="Опис моделі" style="margin-top:10px; height:60px;"></textarea>
                 <label>Фото</label>
-                <input type="file" accept="image/*" onchange="handleImage(this)">
+                <input type="file" accept="image/*" onchange="processImage(this)">
+                
                 <div class="row">
                     <div><label>Категорія</label>
-                        <select id="p_cat"><option>Дім</option><option>Брелоки</option><option>Інше</option></select>
+                        <select id="p_cat"><option>Дім</option><option>Брелоки</option><option>Фігурки</option><option>Інше</option></select>
                     </div>
-                    <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="runCalc()"></div>
+                    <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calculateAll()"></div>
                 </div>
+
                 <div class="row">
-                    <div><label>Години</label><input type="number" id="t_h" value="0" oninput="runCalc()"></div>
-                    <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="runCalc()"></div>
+                    <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calculateAll()"></div>
+                    <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calculateAll()"></div>
                 </div>
-                <label>Націнка: <span id="m_label">100</span>%</label>
-                <input type="range" id="m_val" min="0" max="500" value="100" oninput="document.getElementById('m_label').innerText=this.value; runCalc()">
-                <button class="main-btn" onclick="saveToFirebase()">💾 ВИСТАВИТИ НА ПРОДАЖ</button>
+
+                <div class="row">
+                    <div><label>Брак (%)</label><input type="number" id="p_fail" value="5" oninput="calculateAll()"></div>
+                    <div><label>Націнка (%)</label><input type="number" id="m_val" value="100" oninput="calculateAll()"></div>
+                </div>
+                <button class="main-btn" onclick="uploadToStore()">🚀 ОПУБЛІКУВАТИ</button>
             </div>
         </div>
 
-        <div id="tab-orders" class="admin-section">
-            <div id="orders-container">Завантаження замовлень...</div>
-        </div>
+        <div id="tab-orders" class="admin-section"><div id="orders-list"></div></div>
+        <div id="tab-catalog" class="admin-section"><div id="catalog-list"></div></div>
 
-        <div id="tab-catalog" class="admin-section">
-            <div id="catalog-manager"></div>
-        </div>
-
-        <div id="tab-storage" class="admin-section">
+        <div id="tab-config" class="admin-section">
             <div class="card">
-                <label>Ціна пластику (₴/кг)</label><input type="number" id="set_plastic" value="850" oninput="runCalc()">
-                <label>Амортизація (₴/год)</label><input type="number" id="set_amort" value="5" oninput="runCalc()">
-                <label>Електрика (₴/год)</label><input type="number" id="set_light" value="1" oninput="runCalc()">
-                <label>Робота (₴/фікс)</label><input type="number" id="set_work" value="50" oninput="runCalc()">
-                <label>Адгезія (₴)</label><input type="number" id="set_adh" value="3" oninput="runCalc()">
+                <label>Ціна котушки (₴)</label><input type="number" id="conf_p_price" value="850" oninput="calculateAll()">
+                <label>Вага котушки (г)</label><input type="number" id="conf_p_weight" value="1000" oninput="calculateAll()">
+                <label>Амортизація (₴/год)</label><input type="number" id="conf_amort" value="5" oninput="calculateAll()">
+                <label>Електрика (₴/год)</label><input type="number" id="conf_light" value="1.5" oninput="calculateAll()">
+                <label>Робота (₴/фікс)</label><input type="number" id="conf_work" value="50" oninput="calculateAll()">
+                <label>Адгезія (₴)</label><input type="number" id="conf_adh" value="5" oninput="calculateAll()">
             </div>
         </div>
     </div>
 
-    <div id="cart-bar" onclick="showOrderForm()">🛒 КОШИК: <span id="cart-count">0</span></div>
+    <div id="cart-bar" onclick="openOrderModal()">🛒 КОШИК: <span id="cart-count">0</span></div>
 
-    <div id="modal-order" class="modal">
+    <div id="modal-checkout" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0">Оформлення</h3>
-            <div id="cart-items-list" style="margin-bottom:15px;"></div>
+            <h2 style="margin-top:0">Оформлення</h2>
+            <div id="cart-items-preview" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
             <input type="text" id="cust-name" placeholder="Твоє ПІБ">
-            <input type="tel" id="cust-phone" placeholder="Номер телефону" style="margin-top:10px;">
-            <button class="main-btn" onclick="sendOrder()">ВІДПРАВИТИ ЗАМОВЛЕННЯ</button>
-            <button class="main-btn" style="background:#333; margin-top:8px;" onclick="closeModal()">ЗАКРИТИ</button>
+            <input type="tel" id="cust-phone" placeholder="Телефон" style="margin-top:10px;">
+            <button class="main-btn" onclick="submitOrder()">ВІДПРАВИТИ ЗАМОВЛЕННЯ</button>
+            <button class="main-btn" style="background:none; color:var(--gray);" onclick="closeModals()">ЗАКРИТИ</button>
         </div>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         const ADMIN_ID = 6259271140;
         const DB = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
         
-        let catalog = [];
-        let cart = [];
-        let tempImg = "";
+        let localCatalog = [], userCart = [], encodedPhoto = "";
 
-        // --- Navigation Logic ---
-        function switchMainView(view) {
-            document.getElementById('view-shop').style.display = (view === 'shop') ? 'block' : 'none';
-            document.getElementById('view-admin').style.display = (view === 'admin') ? 'block' : 'none';
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(view.toUpperCase())));
+        window.onload = () => {
+            tg.expand();
+            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) document.getElementById('admin-nav').style.display = 'flex';
+            loadSettings();
+            syncCatalog();
+        };
+
+        function switchView(v) {
+            document.getElementById('view-shop').style.display = v==='shop'?'block':'none';
+            document.getElementById('view-admin').style.display = v==='admin'?'block':'none';
+            document.getElementById('btn-shop').classList.toggle('active', v==='shop');
+            document.getElementById('btn-admin').classList.toggle('active', v==='admin');
         }
 
-        function switchAdminTab(tabId, btn) {
+        function switchAdminTab(id, btn) {
             document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
+            document.getElementById(id).classList.add('active');
             document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            if(tabId === 'tab-orders') loadOrders();
-            if(tabId === 'tab-catalog') renderManager();
+            if(id === 'tab-orders') syncOrders();
+            if(id === 'tab-catalog') renderCatalogEditor();
         }
 
-        // --- Calculator Logic ---
-        function runCalc() {
-            let w = parseFloat(document.getElementById('w').value) || 0;
-            let h = parseFloat(document.getElementById('t_h').value) || 0;
-            let m = parseFloat(document.getElementById('t_m').value) || 0;
-            let plasticPrice = parseFloat(document.getElementById('set_plastic').value) || 850;
+        function calculateAll() {
+            const w = parseFloat(document.getElementById('w').value) || 0;
+            const fail = parseFloat(document.getElementById('p_fail').value) || 0;
+            const pPrice = parseFloat(document.getElementById('conf_p_price').value) || 850;
+            const pWeight = parseFloat(document.getElementById('conf_p_weight').value) || 1000;
             
-            let plasticCost = w * (plasticPrice / 1000);
-            let time = h + (m / 60);
-            let techCost = time * (parseFloat(document.getElementById('set_amort').value) + parseFloat(document.getElementById('set_light').value));
+            const netWeight = w * (1 + fail/100);
+            const matCost = netWeight * (pPrice / pWeight);
+            const hours = (parseFloat(document.getElementById('t_h').value)||0) + (parseFloat(document.getElementById('t_m').value)/60);
+            const timeCost = hours * (parseFloat(document.getElementById('conf_amort').value) + parseFloat(document.getElementById('conf_light').value));
+            const fixCosts = parseFloat(document.getElementById('conf_work').value) + parseFloat(document.getElementById('conf_adh').value);
+            const margin = parseFloat(document.getElementById('m_val').value) / 100;
             
-            let margin = parseFloat(document.getElementById('m_val').value) / 100;
-            let total = (plasticCost + techCost) * (1 + margin) + parseFloat(document.getElementById('set_work').value) + parseFloat(document.getElementById('set_adh').value);
+            const cost = matCost + timeCost + fixCosts;
+            const price = (matCost + timeCost) * (1 + margin) + fixCosts;
             
-            document.getElementById('res-price').innerText = Math.round(total) + " ₴";
-            return Math.round(total);
+            document.getElementById('res-price').innerText = Math.round(price) + " ₴";
+            document.getElementById('info-cost').innerText = Math.round(cost) + " ₴";
+            document.getElementById('info-profit').innerText = Math.round(price - cost) + " ₴";
+            saveSettings();
+            return Math.round(price);
         }
 
-        function handleImage(input) {
+        function processImage(input) {
             const reader = new FileReader();
-            reader.onload = e => tempImg = e.target.result;
+            reader.onload = e => encodedPhoto = e.target.result;
             reader.readAsDataURL(input.files[0]);
         }
 
-        async function saveToFirebase() {
-            let name = document.getElementById('p_name').value;
-            if(!name) return alert("Вкажи назву!");
-            let product = {
-                id: Date.now(),
-                name: name,
-                desc: document.getElementById('p_desc').value,
-                price: runCalc(),
-                cat: document.getElementById('p_cat').value,
-                img: tempImg
-            };
+        async function uploadToStore() {
+            const name = document.getElementById('p_name').value;
+            if(!name || !encodedPhoto) return alert("Треба назву і фото!");
+            const product = { id: Date.now(), name, desc: document.getElementById('p_desc').value, price: calculateAll(), category: document.getElementById('p_cat').value, img: encodedPhoto };
             await fetch(`${DB}/catalog/${product.id}.json`, { method: 'PUT', body: JSON.stringify(product) });
-            alert("Товар додано!");
-            loadCatalog();
+            alert("Товар у магазині!"); syncCatalog();
         }
 
-        // --- Shop & Cart Logic ---
-        async function loadCatalog() {
+        async function syncCatalog() {
             const res = await fetch(`${DB}/catalog.json`);
             const data = await res.json();
-            catalog = data ? Object.values(data) : [];
+            localCatalog = data ? Object.values(data) : [];
             renderShop();
         }
 
         function renderShop() {
-            const container = document.getElementById('shop-container');
-            container.innerHTML = catalog.map(p => `
+            document.getElementById('shop-container').innerHTML = localCatalog.map(p => `
                 <div class="product-card">
                     <img src="${p.img}" class="product-img">
                     <div class="product-info">
                         <div class="product-title">${p.name}</div>
                         <div class="product-price">${p.price} ₴</div>
-                        <button class="main-btn" style="padding:8px; font-size:12px;" onclick="addToCart('${p.name}', ${p.price})">КУПИТИ</button>
+                        <button class="main-btn" style="padding:10px; font-size:12px;" onclick="addToCart(${p.id})">КУПИТИ</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
-        function addToCart(name, price) {
-            cart.push({name, price});
-            document.getElementById('cart-count').innerText = cart.length;
+        function addToCart(id) {
+            userCart.push(localCatalog.find(p => p.id === id));
+            document.getElementById('cart-count').innerText = userCart.length;
             document.getElementById('cart-bar').style.display = 'block';
+            tg.HapticFeedback.impactOccurred('light');
         }
 
-        function showOrderForm() {
-            document.getElementById('modal-order').style.display = 'block';
-            document.getElementById('cart-items-list').innerHTML = cart.map((item, i) => `
-                <div class="order-item">
-                    <span>${item.name}</span>
-                    <button onclick="cart.splice(${i},1); showOrderForm();" style="border:none; background:none; color:red;">✕</button>
-                </div>
-            `).join('');
-            if(cart.length === 0) closeModal();
+        function openOrderModal() {
+            document.getElementById('modal-checkout').style.display = 'flex';
+            document.getElementById('cart-items-preview').innerHTML = userCart.map((it, i) => `
+                <div class="list-item"><span>${it.name}</span><b style="color:var(--danger)" onclick="removeFromCart(${i})">✕</b></div>`).join('');
         }
 
-        async function sendOrder() {
-            let name = document.getElementById('cust-name').value;
-            let phone = document.getElementById('cust-phone').value;
-            if(!name || !phone) return alert("Заповни дані!");
+        function removeFromCart(i) {
+            userCart.splice(i, 1);
+            if(!userCart.length) { closeModals(); document.getElementById('cart-bar').style.display = 'none'; }
+            else openOrderModal();
+            document.getElementById('cart-count').innerText = userCart.length;
+        }
 
-            let order = {
-                id: Date.now(),
-                customer: name,
-                phone: phone,
-                items: cart.map(i => i.name).join(", "),
-                total: cart.reduce((a, b) => a + b.price, 0)
-            };
-
+        async function submitOrder() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            if(!name || !phone) return alert("Введи дані!");
+            const order = { id: Date.now(), customer: name, phone, items: userCart.map(i => i.name).join(", "), total: userCart.reduce((s, i) => s + i.price, 0) };
             await fetch(`${DB}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
-            alert("Дякуємо! Замовлення прийнято.");
-            cart = [];
-            closeModal();
-            document.getElementById('cart-bar').style.display = 'none';
+            tg.showAlert("Готово! Чекайте на дзвінок."); userCart = []; closeModals(); document.getElementById('cart-bar').style.display = 'none';
         }
 
-        // --- Admin Management ---
-        async function loadOrders() {
+        async function syncOrders() {
             const res = await fetch(`${DB}/orders.json`);
             const data = await res.json();
-            const container = document.getElementById('orders-container');
-            if(!data) return container.innerHTML = "Замовлень поки немає";
-            
-            container.innerHTML = Object.values(data).reverse().map(o => `
+            const list = document.getElementById('orders-list');
+            if(!data) { list.innerHTML = "Замовлень немає"; return; }
+            list.innerHTML = Object.values(data).reverse().map(o => `
                 <div class="card">
-                    <b>👤 ${o.customer}</b><br>
-                    📞 ${o.phone}<br>
-                    <div style="font-size:12px; color:var(--gray); margin:5px 0;">${o.items}</div>
-                    <b style="color:var(--accent)">${o.total} ₴</b><br>
+                    <b>${o.customer}</b> | ${o.total} ₴<br><small>${o.phone}</small><br>
+                    <div style="font-size:11px; color:var(--gray); background:#000; padding:10px; border-radius:10px; margin-top:10px;">${o.items}</div>
                     <div class="row" style="margin-top:10px;">
-                        <button class="nav-btn" style="background:#4caf50; color:white; font-size:10px;" onclick="copyOrder('${o.customer}', '${o.phone}', '${o.items}')">КОПІЮВАТИ</button>
-                        <button class="nav-btn" style="background:#f44336; color:white; font-size:10px;" onclick="deleteOrder('${o.id}')">ВИДАЛИТИ</button>
+                        <button class="sub-tab" style="background:var(--success); color:white; flex:1" onclick="copyOrder('${o.customer}','${o.phone}','${o.items}','${o.total}')">📋 КОПІЮВАТИ</button>
+                        <button class="sub-tab" style="background:var(--danger); color:white;" onclick="deleteOrder('${o.id}')">✕</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
-        function renderManager() {
-            document.getElementById('catalog-manager').innerHTML = catalog.map(p => `
-                <div class="order-item">
-                    <span>${p.name}</span>
-                    <button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none;">ВИДАЛИТИ</button>
-                </div>
-            `).join('');
+        function renderCatalogEditor() {
+            document.getElementById('catalog-list').innerHTML = localCatalog.map(p => `
+                <div class="list-item"><span>${p.name}</span><button class="sub-tab" style="background:var(--danger); color:white;" onclick="deleteProduct('${p.id}')">ВИДАЛИТИ</button></div>`).join('');
         }
 
-        async function deleteProduct(id) {
-            if(confirm("Видалити товар?")) {
-                await fetch(`${DB}/catalog/${id}.json`, { method: 'DELETE' });
-                loadCatalog();
-                setTimeout(renderManager, 500);
-            }
+        async function deleteProduct(id) { if(confirm("Видалити?")) { await fetch(`${DB}/catalog/${id}.json`, {method:'DELETE'}); syncCatalog(); setTimeout(renderCatalogEditor, 500); } }
+        async function deleteOrder(id) { if(confirm("Видалити?")) { await fetch(`${DB}/orders/${id}.json`, {method:'DELETE'}); syncOrders(); } }
+        function copyOrder(c,p,i,t) { navigator.clipboard.writeText(`Клієнт: ${c}\nТел: ${p}\nТовари: ${i}\nСума: ${t} ₴`); alert("Скопійовано!"); }
+        function saveSettings() {
+            const s = {};
+            ['conf_p_price','conf_p_weight','conf_amort','conf_light','conf_work','conf_adh','p_fail','m_val'].forEach(id => s[id] = document.getElementById(id).value);
+            localStorage.setItem('dryguny_settings', JSON.stringify(s));
         }
-
-        async function deleteOrder(id) {
-            if(confirm("Видалити замовлення?")) {
-                await fetch(`${DB}/orders/${id}.json`, { method: 'DELETE' });
-                loadOrders();
-            }
+        function loadSettings() {
+            const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
+            for(let k in s) if(document.getElementById(k)) document.getElementById(k).value = s[k];
         }
-
-        function copyOrder(c, p, i) {
-            navigator.clipboard.writeText(`Клієнт: ${c}\nТел: ${p}\nЗамовлення: ${i}`);
-            alert("Дані копійовано!");
-        }
-
-        function closeModal() { document.getElementById('modal-order').style.display = 'none'; }
-
-        // Start
-        window.onload = () => {
-            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) {
-                document.getElementById('admin-nav').style.display = 'flex';
-            }
-            loadCatalog();
-        };
+        function closeModals() { document.getElementById('modal-checkout').style.display = 'none'; }
     </script>
 </body>
 </html>
