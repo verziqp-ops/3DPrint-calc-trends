@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dryguny Ultra v48.0</title>
+    <title>Dryguny Ultra v49.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
@@ -12,40 +12,38 @@
             --success: #4caf50; --danger: #f44336;
         }
         body.light-mode {
-            --bg: #ffffff; --card-bg: #f2f2f2; --text: #000000;
-            --input: #e0e0e0; --border: rgba(0,0,0,0.1);
+            --bg: #f5f5f5; --card-bg: #ffffff; --text: #1a1a1a; 
+            --input: #ececec; --border: rgba(0,0,0,0.05);
         }
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 120px; transition: 0.3s; }
         
-        /* Theme Toggle */
         .theme-btn { position: absolute; top: 15px; right: 15px; background: var(--input); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); cursor: pointer; font-size: 18px; z-index: 100; }
 
-        /* Nav */
         .main-nav { display: none; gap: 10px; margin-bottom: 25px; background: var(--input); padding: 6px; border-radius: 18px; border: 1px solid var(--border); }
         .nav-btn { flex: 1; padding: 14px; border: none; border-radius: 14px; background: none; color: var(--gray); font-weight: 700; cursor: pointer; }
         .nav-btn.active { background: var(--accent); color: white; }
 
-        /* Categories */
+        /* Shop Cats */
         .cat-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 5px; scrollbar-width: none; }
         .cat-item { padding: 10px 16px; background: var(--input); border-radius: 12px; font-size: 13px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
         .cat-item.active { background: var(--accent); color: white; }
 
-        /* Shop */
+        /* Grid */
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .product-card { background: var(--card-bg); border-radius: 24px; overflow: hidden; border: 1px solid var(--border); }
         .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #111; cursor: pointer; }
         .product-info { padding: 14px; }
-        .product-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+        .product-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; height: 38px; overflow: hidden; }
         .product-price { color: var(--accent); font-weight: 900; font-size: 18px; }
         
-        /* Admin */
+        /* Admin Tabs */
         .admin-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
         .sub-tab { padding: 10px 18px; background: var(--input); border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--gray); border: 1px solid var(--border); white-space: nowrap; }
-        .sub-tab.active { background: #2a2a2a; color: white; border-color: var(--accent); }
+        .sub-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
         .admin-section { display: none; }
         .admin-section.active { display: block; }
 
-        /* Forms */
+        /* Forms & Cards */
         .card { background: var(--card-bg); border-radius: 24px; padding: 18px; border: 1px solid var(--border); margin-bottom: 15px; }
         label { display: block; font-size: 10px; color: var(--gray); font-weight: 800; margin: 12px 0 6px 6px; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 15px; border-radius: 16px; border: 1px solid var(--border); background: var(--input); color: var(--text); box-sizing: border-box; font-size: 15px; }
@@ -53,12 +51,13 @@
         .main-btn { background: var(--accent); color: white; border: none; padding: 16px; border-radius: 18px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
         
         /* Modals */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 2000; padding: 20px; align-items: center; justify-content: center; overflow-y: auto; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 2000; padding: 20px; align-items: center; justify-content: center; }
         .modal-content { background: var(--card-bg); border-radius: 30px; padding: 25px; width: 100%; max-width: 420px; position: relative; }
-        .modal-full-img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
+        .modal-img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
         .close-x { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
 
-        #cart-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 18px 32px; border-radius: 40px; font-weight: 900; display: none; z-index: 1000; }
+        .list-item { background: var(--input); padding: 14px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+        #cart-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 18px 32px; border-radius: 40px; font-weight: 900; display: none; z-index: 1000; box-shadow: 0 10px 25px rgba(255,87,34,0.4); }
     </style>
 </head>
 <body>
@@ -72,15 +71,13 @@
 
     <div id="view-shop">
         <div style="font-weight: 900; font-size: 24px; margin-bottom: 20px;">DRYGUNY<span style="color:var(--accent)">3D</span></div>
-        
         <div class="cat-bar" id="shop-cats">
             <div class="cat-item active" onclick="filterByCat('Всі', this)">Всі</div>
-            <div class="cat-item" onclick="filterByCat('Дім', this)">Дім</div>
-            <div class="cat-item" onclick="filterByCat('Брелоки', this)">Брелоки</div>
-            <div class="cat-item" onclick="filterByCat('Фігурки', this)">Фігурки</div>
-            <div class="cat-item" onclick="filterByCat('Інше', this)">Інше</div>
+            <div class="cat-item" onclick="filterByCat('Дім', this)">🏠 Дім</div>
+            <div class="cat-item" onclick="filterByCat('Брелоки', this)">🔑 Брелоки</div>
+            <div class="cat-item" onclick="filterByCat('Фігурки', this)">🐉 Фігурки</div>
+            <div class="cat-item" onclick="filterByCat('Інше', this)">📦 Інше</div>
         </div>
-
         <div class="shop-grid" id="shop-container">Завантаження...</div>
     </div>
 
@@ -93,18 +90,16 @@
         </div>
 
         <div id="tab-calc" class="admin-section active">
-            <div id="res-price" style="font-size:40px; text-align:center; font-weight:900; color:var(--accent);">0 ₴</div>
+            <div id="res-price" style="font-size:48px; text-align:center; font-weight:950; color:var(--accent); margin-bottom:10px;">0 ₴</div>
             <div class="card">
                 <input type="text" id="p_name" placeholder="Назва моделі">
-                <textarea id="p_desc" placeholder="Опис для клієнта" style="margin-top:10px; height:60px;"></textarea>
+                <textarea id="p_desc" placeholder="Опис" style="margin-top:10px; height:60px;"></textarea>
                 <label>Фото</label>
                 <input type="file" accept="image/*" onchange="processImage(this)">
                 
                 <div class="row">
                     <div><label>Категорія</label>
-                        <select id="p_cat">
-                            <option>Дім</option><option>Брелоки</option><option>Фігурки</option><option>Інше</option>
-                        </select>
+                        <select id="p_cat"><option>Дім</option><option>Брелоки</option><option>Фігурки</option><option>Інше</option></select>
                     </div>
                     <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calculateAll()"></div>
                 </div>
@@ -119,13 +114,16 @@
                 <button class="main-btn" onclick="uploadToStore()">🚀 ОПУБЛІКУВАТИ</button>
             </div>
         </div>
+
         <div id="tab-orders" class="admin-section"><div id="orders-list"></div></div>
         <div id="tab-catalog" class="admin-section"><div id="catalog-list"></div></div>
+        
         <div id="tab-config" class="admin-section">
             <div class="card">
-                <label>Ціна котушки</label><input type="number" id="conf_p_price" value="850" oninput="calculateAll()">
-                <label>Амортизація</label><input type="number" id="conf_amort" value="5" oninput="calculateAll()">
-                <label>Робота</label><input type="number" id="conf_work" value="50" oninput="calculateAll()">
+                <label>Ціна котушки (₴)</label><input type="number" id="conf_p_price" value="850" oninput="calculateAll()">
+                <label>Грам у котушці</label><input type="number" id="conf_p_weight" value="1000" oninput="calculateAll()">
+                <label>Амортизація (₴/год)</label><input type="number" id="conf_amort" value="5" oninput="calculateAll()">
+                <label>Робота (₴)</label><input type="number" id="conf_work" value="50" oninput="calculateAll()">
             </div>
         </div>
     </div>
@@ -133,23 +131,22 @@
     <div id="modal-product" class="modal">
         <div class="modal-content">
             <span class="close-x" onclick="closeModals()">×</span>
-            <img id="m-img" class="modal-full-img">
+            <img id="m-img" class="modal-img">
             <h2 id="m-title" style="margin:0"></h2>
-            <p id="m-desc" style="color:var(--gray); font-size:14px; margin:10px 0;"></p>
-            <div id="m-price" style="font-size:22px; font-weight:900; color:var(--accent)"></div>
-            <label>Скільки штук?</label>
+            <div id="m-price" style="font-size:24px; font-weight:900; color:var(--accent); margin:10px 0;"></div>
+            <label>Кількість (шт)</label>
             <input type="number" id="m-qty" value="1" min="1">
-            <button class="main-btn" id="m-add-btn">ДОДАТИ В КОШИК</button>
+            <button class="main-btn" id="m-add-btn">В КОШИК</button>
         </div>
     </div>
 
     <div id="modal-checkout" class="modal">
         <div class="modal-content">
-            <h2 style="margin:0 0 15px 0">Кошик</h2>
-            <div id="cart-items-preview" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
+            <h2 style="margin:0 0 15px 0">Оформлення</h2>
+            <div id="cart-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
             <input type="text" id="cust-name" placeholder="Твоє ПІБ">
-            <input type="tel" id="cust-phone" placeholder="Телефон">
-            <button class="main-btn" onclick="submitOrder()">ВІДПРАВИТИ</button>
+            <input type="tel" id="cust-phone" placeholder="Телефон" style="margin-top:10px;">
+            <button class="main-btn" onclick="submitOrder()">ЗАМОВИТИ</button>
             <button class="main-btn" style="background:none; color:var(--gray);" onclick="closeModals()">ЗАКРИТИ</button>
         </div>
     </div>
@@ -165,10 +162,7 @@
 
         window.onload = () => {
             tg.expand();
-            // ПЕРЕВІРКА АДМІНА: якщо ID збігається АБО ти відкрив не через телеграм (для тесту)
-            if (!tg.initDataUnsafe?.user || tg.initDataUnsafe.user.id === ADMIN_ID) {
-                document.getElementById('admin-nav').style.display = 'flex';
-            }
+            if (!tg.initDataUnsafe?.user || tg.initDataUnsafe.user.id === ADMIN_ID) document.getElementById('admin-nav').style.display = 'flex';
             loadSettings();
             syncCatalog();
         };
@@ -195,14 +189,13 @@
             const w = parseFloat(document.getElementById('w').value) || 0;
             const fail = parseFloat(document.getElementById('p_fail').value) || 0;
             const pPrice = parseFloat(document.getElementById('conf_p_price').value) || 850;
-            const netWeight = w * (1 + fail/100);
-            const matCost = netWeight * (pPrice / 1000);
+            const pWeight = parseFloat(document.getElementById('conf_p_weight').value) || 1000;
+            const matCost = (w * (1 + fail/100)) * (pPrice / pWeight);
             const hours = (parseFloat(document.getElementById('t_h').value)||0) + (parseFloat(document.getElementById('t_m').value)/60);
             const timeCost = hours * (parseFloat(document.getElementById('conf_amort').value) + 1.5);
-            const fixCosts = parseFloat(document.getElementById('conf_work').value) + 5;
-            const price = (matCost + timeCost) * (1 + (parseFloat(document.getElementById('m_val').value)/100)) + fixCosts;
+            const price = (matCost + timeCost) * (1 + (parseFloat(document.getElementById('m_val').value)/100)) + parseFloat(document.getElementById('conf_work').value);
             document.getElementById('res-price').innerText = Math.round(price) + " ₴";
-            return Math.round(price);
+            saveSettings(); return Math.round(price);
         }
 
         function processImage(input) {
@@ -213,10 +206,10 @@
 
         async function uploadToStore() {
             const name = document.getElementById('p_name').value;
-            if(!name || !encodedPhoto) return alert("Треба назву і фото!");
+            if(!name || !encodedPhoto) return alert("Назва і фото!");
             const product = { id: Date.now(), name, desc: document.getElementById('p_desc').value, price: calculateAll(), category: document.getElementById('p_cat').value, img: encodedPhoto };
             await fetch(`${DB}/catalog/${product.id}.json`, { method: 'PUT', body: JSON.stringify(product) });
-            alert("Готово!"); syncCatalog();
+            alert("Опубліковано!"); syncCatalog();
         }
 
         async function syncCatalog() {
@@ -234,7 +227,7 @@
         }
 
         function renderShop() {
-            const filtered = currentCat === "Всі" ? localCatalog : localCatalog.filter(p => p.category === currentCat);
+            const filtered = currentCat === "Всі" ? localCatalog : localCatalog.filter(p => p.category.includes(currentCat.replace(/[^а-яА-Яa-zA-Z]/g, '')));
             document.getElementById('shop-container').innerHTML = filtered.map(p => `
                 <div class="product-card" onclick="openFullProduct(${p.id})">
                     <img src="${p.img}" class="product-img">
@@ -249,25 +242,22 @@
             const p = localCatalog.find(x => x.id === id);
             document.getElementById('m-img').src = p.img;
             document.getElementById('m-title').innerText = p.name;
-            document.getElementById('m-desc').innerText = p.desc || "Без опису";
             document.getElementById('m-price').innerText = p.price + " ₴";
             document.getElementById('m-qty').value = 1;
-            document.getElementById('m-add-btn').onclick = () => addToCart(p, parseInt(document.getElementById('m-qty').value));
+            document.getElementById('m-add-btn').onclick = () => {
+                const qty = parseInt(document.getElementById('m-qty').value) || 1;
+                for(let i=0; i<qty; i++) userCart.push(p);
+                document.getElementById('cart-count').innerText = userCart.length;
+                document.getElementById('cart-bar').style.display = 'block';
+                closeModals();
+            };
             document.getElementById('modal-product').style.display = 'flex';
-        }
-
-        function addToCart(p, qty) {
-            for(let i=0; i<qty; i++) userCart.push(p);
-            document.getElementById('cart-count').innerText = userCart.length;
-            document.getElementById('cart-bar').style.display = 'block';
-            closeModals();
-            tg.HapticFeedback.impactOccurred('medium');
         }
 
         function openOrderModal() {
             document.getElementById('modal-checkout').style.display = 'flex';
-            const uniqueItems = [...new Set(userCart.map(i => i.name))];
-            document.getElementById('cart-items-preview').innerHTML = uniqueItems.map(name => {
+            const unique = [...new Set(userCart.map(i => i.name))];
+            document.getElementById('cart-list').innerHTML = unique.map(name => {
                 const count = userCart.filter(i => i.name === name).length;
                 return `<div class="list-item"><span>${name} x${count}</span></div>`;
             }).join('');
@@ -277,35 +267,42 @@
             const name = document.getElementById('cust-name').value;
             const phone = document.getElementById('cust-phone').value;
             if(!name || !phone) return alert("Введи дані!");
-            const order = { id: Date.now(), customer: name, phone, items: userCart.map(i => i.name).join(", "), total: userCart.reduce((s, i) => s + i.price, 0) };
+            const itemsSummary = [...new Set(userCart.map(i => i.name))].map(n => `${n} (x${userCart.filter(it => it.name === n).length})`).join(", ");
+            const order = { id: Date.now(), customer: name, phone, items: itemsSummary, total: userCart.reduce((s, i) => s + i.price, 0) };
             await fetch(`${DB}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
-            tg.showAlert("Замовлення прийнято!"); userCart = []; closeModals(); document.getElementById('cart-bar').style.display = 'none';
-        }
-
-        function closeModals() {
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            tg.showAlert("Замовлення відправлено!"); userCart = []; closeModals(); document.getElementById('cart-bar').style.display = 'none';
         }
 
         async function syncOrders() {
             const res = await fetch(`${DB}/orders.json`);
             const data = await res.json();
             document.getElementById('orders-list').innerHTML = data ? Object.values(data).reverse().map(o => `
-                <div class="card"><b>${o.customer}</b> | ${o.total} ₴<br><small>${o.phone}</small></div>`).join('') : "Порожньо";
+                <div class="card">
+                    <b>${o.customer}</b> | ${o.total} ₴<br><small>${o.phone}</small>
+                    <div style="font-size:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; margin-top:10px;">${o.items}</div>
+                    <div class="row" style="margin-top:10px;">
+                        <button class="sub-tab" style="background:var(--success); color:white; flex:1" onclick="copyOrder('${o.customer}','${o.phone}','${o.items}','${o.total}')">📋 КОПІЮВАТИ</button>
+                        <button class="sub-tab" style="background:var(--danger); color:white;" onclick="deleteOrder('${o.id}')">✕</button>
+                    </div>
+                </div>`).join('') : "Замовлень немає";
         }
 
         function renderCatalogEditor() {
             document.getElementById('catalog-list').innerHTML = localCatalog.map(p => `
-                <div class="list-item"><span>${p.name}</span><button onclick="deleteProduct('${p.id}')">✕</button></div>`).join('');
+                <div class="list-item"><span>${p.name}</span><button class="sub-tab" style="background:var(--danger); color:white;" onclick="deleteProduct('${p.id}')">ВИДАЛИТИ</button></div>`).join('');
         }
 
         async function deleteProduct(id) { if(confirm("Видалити?")) { await fetch(`${DB}/catalog/${id}.json`, {method:'DELETE'}); syncCatalog(); } }
+        async function deleteOrder(id) { if(confirm("Видалити?")) { await fetch(`${DB}/orders/${id}.json`, {method:'DELETE'}); syncOrders(); } }
+        function copyOrder(c,p,i,t) { navigator.clipboard.writeText(`Клієнт: ${c}\nТел: ${p}\nЗамовлення: ${i}\nСума: ${t} ₴`); alert("Скопійовано!"); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
         function saveSettings() {
-            const s = { p: document.getElementById('conf_p_price').value };
+            const s = {}; ['conf_p_price','conf_p_weight','conf_amort','conf_work','p_fail','m_val'].forEach(id => s[id] = document.getElementById(id).value);
             localStorage.setItem('dry_set', JSON.stringify(s));
         }
         function loadSettings() {
             const s = JSON.parse(localStorage.getItem('dry_set') || '{}');
-            if(s.p) document.getElementById('conf_p_price').value = s.p;
+            for(let k in s) if(document.getElementById(k)) document.getElementById(k).value = s[k];
         }
     </script>
 </body>
