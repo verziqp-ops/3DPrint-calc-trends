@@ -51,7 +51,7 @@
         
         .item-row { background: var(--input); padding: 12px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
         .order-box { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .btn-action { padding: 8px; border-radius: 10px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-action { padding: 8px 12px; border-radius: 10px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px; margin-right: 5px; }
         #img_preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; aspect-ratio: 1/1; object-fit: cover; border: 1px solid var(--accent); }
         
         .full-img { width: 100%; border-radius: 15px; object-fit: contain; max-height: 350px; background: #eee; margin-bottom: 15px; }
@@ -227,10 +227,16 @@
             let h = parseFloat(document.getElementById('t_h').value) || 0;
             let min = parseFloat(document.getElementById('t_m').value) || 0;
             let m = parseFloat(document.getElementById('m').value);
+            let amort = parseFloat(document.getElementById('val_amort').value) || 0;
+            let light = parseFloat(document.getElementById('val_light').value) || 0;
+            let work = parseFloat(document.getElementById('val_work_hour').value) || 0;
+            let adhesion = parseFloat(document.getElementById('val_adhesion').value) || 0;
+
             let plasticCost = w * (pPrice/spoolW);
-            let techCost = (h + min/60) * (parseFloat(document.getElementById('val_amort').value) + parseFloat(document.getElementById('val_light').value));
-            let cost = plasticCost + techCost + parseFloat(document.getElementById('val_work_hour').value);
-            let final = (plasticCost + techCost) * (1 + m/100) + parseFloat(document.getElementById('val_work_hour').value);
+            let techCost = (h + min/60) * (amort + light);
+            let cost = plasticCost + techCost + work + adhesion;
+            let final = (plasticCost + techCost) * (1 + m/100) + work + adhesion;
+            
             document.getElementById('res').innerText = Math.round(final) + " ₴";
             document.getElementById('total_cost').innerText = Math.round(cost);
             document.getElementById('profit_val').innerText = Math.round(final - cost);
@@ -249,6 +255,20 @@
             const reader = new FileReader();
             reader.onload = e => { currentImg = e.target.result; document.getElementById('img_preview').src = currentImg; document.getElementById('img_preview').style.display = 'block'; };
             reader.readAsDataURL(input.files[0]);
+        }
+
+        function roundPrice() {
+            let p = parseInt(document.getElementById('res').innerText);
+            document.getElementById('res').innerText = (Math.ceil(p / 10) * 10) + " ₴";
+        }
+
+        function saveSettings() {
+            const s = {};
+            ['p_price','spool_w','val_amort','val_light','val_work_hour','val_adhesion'].forEach(id => {
+                s[id] = document.getElementById(id).value;
+            });
+            localStorage.setItem('dryguny_settings', JSON.stringify(s));
+            calc();
         }
 
         async function loadSharedCatalog() {
@@ -271,6 +291,12 @@
                 </div>`).join('');
         }
 
+        function filterShop(cat, btn) {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderPublicShop(cat);
+        }
+
         function showView(id, btn) {
             document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
             document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
@@ -284,213 +310,17 @@
             document.getElementById(id).style.display = 'block';
             document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            if(id === 'catalog') renderCatalogList();
         }
 
-        async function loadOrders() {
-            const res = await fetch(`${DB_URL}/orders.json`);
-            const data = await res.json();
-            document.getElementById('orders-list').innerHTML = data ? Object.values(data).reverse().map(o => `
-                <div class="order-box"><b>${o.fop}</b><br>${o.phone}<br><small>${o.items}</small><br><b>${o.total} ₴</b></div>`).join('') : "Замовлень немає";
-        }
-
-        window.onload = () => {
-            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) document.getElementById('mode-nav').style.display = 'flex';
-            loadSharedCatalog();
-        };
-    </script>
-</body>
-</html>
-            <div class="row">
-                <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
-                <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
-            </div>
-            <label>Націнка: <span id="m_val">100</span>%</label>
-            <input type="range" id="m" min="0" max="500" value="100" oninput="document.getElementById('m_val').innerText=this.value; calc()">
-            
-            <button class="main-btn" onclick="saveToCatalog()">💾 ЗБЕРЕГТИ В МАГАЗИН</button>
-        </div>
-
-        <div id="catalog" class="card tab-content" style="display:none"><div id="catalog-list"></div></div>
-        
-        <div id="storage" class="card tab-content" style="display:none">
-            <label>Амортизація (₴/год)</label><input type="number" id="val_amort" value="5" oninput="saveSettings()">
-            <label>Електрика (₴/год)</label><input type="number" id="val_light" value="1" oninput="saveSettings()">
-            <label>Робота (₴/фікс)</label><input type="number" id="val_work_hour" value="50" oninput="saveSettings()">
-        </div>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        const ADMIN_ID = 6259271140; 
-        const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
-
-        let catalog = [];
-        let clientCart = JSON.parse(localStorage.getItem('dryguny_client_cart') || '[]'); 
-        let currentImg = "";
-
-        function updateClientCartUI() {
-            localStorage.setItem('dryguny_client_cart', JSON.stringify(clientCart));
-            document.getElementById('client-cart-count').innerText = clientCart.length;
-            document.getElementById('floating-cart').style.display = clientCart.length > 0 ? 'flex' : 'none';
-        }
-
-        // Відкриття детальної картки
-        function openProductDetails(id) {
-            const item = catalog.find(i => i.id == id);
-            if(!item) return;
-            const content = document.getElementById('product-detail-content');
-            content.innerHTML = `
-                <img src="${item.img || ''}" class="full-img">
-                <h2 style="margin:0 0 10px;">${item.name}</h2>
-                <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">${item.description || 'Опис відсутній'}</p>
-                <div style="display:flex; align-items:center; gap:15px; background:var(--input); padding:15px; border-radius:18px;">
-                    <div>
-                        <label style="margin:0 0 5px;">Кількість</label>
-                        <input type="number" id="modal-qty" value="1" min="1" class="qty-input">
-                    </div>
-                    <div style="flex-grow:1; text-align:right;">
-                        <div style="font-size:12px; color:var(--gray);">Ціна за шт.</div>
-                        <div style="font-size:22px; font-weight:900; color:var(--accent);">${item.calculated_price} ₴</div>
-                    </div>
-                </div>
-                <button class="main-btn" onclick="addToCartWithQty('${item.name}', ${item.calculated_price})">ДОДАТИ В КОШИК</button>
-                <button class="main-btn" style="background:#444; margin-top:10px;" onclick="document.getElementById('product-modal').style.display='none'">ЗАКРИТИ</button>
-            `;
-            document.getElementById('product-modal').style.display = 'flex';
-        }
-
-        function addToCartWithQty(name, price) {
-            const qty = parseInt(document.getElementById('modal-qty').value) || 1;
-            for(let i=0; i<qty; i++) {
-                clientCart.push({ id: Date.now() + i, name, price });
-            }
-            updateClientCartUI();
-            document.getElementById('product-modal').style.display = 'none';
-        }
-
-        function addClientToCart(event, name, price) {
-            event.stopPropagation(); // щоб не відкривалась модалка при кліку суто на кнопку
-            clientCart.push({ id: Date.now(), name, price });
-            updateClientCartUI();
-        }
-
-        function openOrderModal() {
-            document.getElementById('order-modal').style.display = 'flex';
-            document.getElementById('client-cart-list').innerHTML = clientCart.map((item, index) => `
+        function renderCatalogList() {
+            document.getElementById('catalog-list').innerHTML = catalog.map(i => `
                 <div class="item-row">
-                    <span>${item.name} (${item.price} ₴)</span>
-                    <button onclick="removeFromClientCart(${index})" style="background:none; border:none; color:red;">✕</button>
+                    <span>${i.name} (${i.calculated_price} ₴)</span>
+                    <button onclick="deleteProduct('${i.id}')" style="color:red;border:none;background:none;">✕</button>
                 </div>`).join('');
         }
 
-        function removeFromClientCart(index) {
-            clientCart.splice(index, 1);
-            updateClientCartUI();
-            openOrderModal();
-        }
-
-        async function checkout() {
-            const phone = document.getElementById('order-phone').value;
-            const fop = document.getElementById('order-fop').value;
-            if(!phone || !fop || clientCart.length === 0) return alert("Заповніть дані!");
-
-            // ГРУПУВАННЯ ДЛЯ АДМІНКИ
-            const grouped = clientCart.reduce((acc, item) => {
-                acc[item.name] = (acc[item.name] || 0) + 1;
-                return acc;
-            }, {});
-            const itemsText = Object.entries(grouped).map(([n, q]) => `${n} (${q} шт)`).join(", ");
-
-            const order = {
-                id: Date.now(), phone, fop,
-                items: itemsText,
-                total: clientCart.reduce((s, i) => s + i.price, 0)
-            };
-
-            await fetch(`${DB_URL}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
-            tg.sendData(JSON.stringify(order));
-            
-            alert("Замовлення надіслано!");
-            clientCart = [];
-            updateClientCartUI();
-            document.getElementById('order-modal').style.display = 'none';
-        }
-
-        // --- АДМІНКА ТА КАЛЬКУЛЯТОР ---
-        function calc() {
-            let pPrice = parseFloat(document.getElementById('p_price').value) || 0;
-            let spoolW = parseFloat(document.getElementById('spool_w').value) || 1000;
-            let w = parseFloat(document.getElementById('w').value) || 0;
-            let fail = parseFloat(document.getElementById('fail_percent').value) || 0;
-            let h = parseFloat(document.getElementById('t_h').value) || 0;
-            let min = parseFloat(document.getElementById('t_m').value) || 0;
-            let totalTime = h + (min/60);
-            let m = parseFloat(document.getElementById('m').value);
-            let amort = parseFloat(document.getElementById('val_amort').value) || 0;
-            let light = parseFloat(document.getElementById('val_light').value) || 0;
-            let work = parseFloat(document.getElementById('val_work_hour').value) || 0;
-            let adhesion = parseFloat(document.getElementById('val_adhesion').value) || 0;
-
-            let plasticCost = (w * (1 + fail/100)) * (pPrice/spoolW);
-            let techCost = totalTime * (amort + light);
-            let cost = plasticCost + techCost + work + adhesion;
-            let final = ((plasticCost + techCost) * (1 + m/100)) + work + adhesion;
-
-            document.getElementById('res').innerText = Math.round(final) + " ₴";
-            document.getElementById('total_cost').innerText = Math.round(cost);
-            document.getElementById('profit_val').innerText = Math.round(final - cost);
-            return { final: Math.round(final) };
-        }
-
-        async function loadOrders() {
-            const res = await fetch(`${DB_URL}/orders.json`);
-            const data = await res.json();
-            const list = document.getElementById('orders-list');
-            if(!data) return list.innerHTML = "Замовлень немає";
-            list.innerHTML = Object.values(data).reverse().map(o => `
-                <div class="order-box">
-                    <b>👤 ${o.fop}</b><br>📞 ${o.phone}<br>
-                    <div style="background:var(--card-bg); padding:8px; border-radius:10px; margin:8px 0; font-size:12px;">
-                        📦 ${o.items}
-                    </div>
-                    💰 <b>${o.total} ₴</b><br>
-                    <button class="btn-action" style="background:#4caf50;color:white;" onclick="copyOrder('${o.fop}', '${o.phone}', '${o.items}', '${o.total}')">📋 КОПІЮВАТИ</button>
-                    <button class="btn-action" style="background:#f44336;color:white;" onclick="deleteOrder('${o.id}')">✕</button>
-                </div>`).join('');
-        }
-
-        function copyOrder(fop, phone, items, total) {
-            navigator.clipboard.writeText(`Клієнт: ${fop}\nТел: ${phone}\nТовари: ${items}\nСума: ${total} ₴`);
-            alert("Скопійовано!");
-        }
-
-        async function deleteOrder(id) {
-            if(confirm("Видалити?")) { await fetch(`${DB_URL}/orders/${id}.json`, { method: 'DELETE' }); loadOrders(); }
-        }
-
-        async function saveToCatalog() {
-            let name = document.getElementById('p_name').value;
-            let desc = document.getElementById('p_desc').value;
-            if(!name) return alert("Введи назву!");
-            let d = calc();
-            let newProduct = {
-                id: Date.now(), name, description: desc, category: document.getElementById('p_cat').value,
-                calculated_price: d.final, img: currentImg
-            };
-            await fetch(`${DB_URL}/catalog/${newProduct.id}.json`, { method: 'PUT', body: JSON.stringify(newProduct) });
-            alert("Додано!");
-            loadSharedCatalog();
-        }
-
-        function previewImage(input) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                currentImg = e.target.result;
-                document.getElementById('img_preview').src = currentImg;
-                document.getElementById('img_preview').style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function roundPrice() {
-    
+        async function deleteProduct(id) {
+            if(confirm("Видалити з каталогу?")) {
+       
