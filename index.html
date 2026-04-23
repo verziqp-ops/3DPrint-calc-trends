@@ -3,492 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dryguny Pro v42.0</title>
+    <title>Dryguny Pro v43.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { 
             --accent: #ff5722; --bg: #0f0f0f; --card-bg: #1a1a1a; 
             --text: #f0f0f0; --gray: #777; --input: #262626; --border: rgba(255,255,255,0.05);
         }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 15px; transition: 0.4s; padding-bottom: 80px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
         
-        .shop-categories { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 15px; scrollbar-width: none; }
-        .cat-chip { background: var(--input); color: var(--gray); padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
-        .cat-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+        /* Navigation */
+        .main-nav { display: none; gap: 8px; margin-bottom: 20px; background: var(--input); padding: 5px; border-radius: 15px; }
+        .nav-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; }
+        .nav-btn.active { background: var(--accent); color: white; }
 
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; cursor: pointer; }
-        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: var(--input); }
-        .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
-        .product-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        /* Shop Grid */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
+        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #222; }
+        .product-info { padding: 12px; }
+        .product-title { font-size: 13px; font-weight: bold; margin-bottom: 5px; height: 35px; overflow: hidden; }
         .product-price { color: var(--accent); font-weight: 900; font-size: 16px; margin-bottom: 10px; }
-        .buy-btn { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; font-size: 12px; }
-
-        #floating-cart { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 15px 20px; border-radius: 30px; font-weight: 900; box-shadow: 0 10px 20px rgba(255,87,34,0.3); z-index: 999; cursor: pointer; display: none; align-items: center; gap: 10px; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 28px; width: 100%; max-width: 400px; position: relative; max-height: 90vh; overflow-y: auto; }
-
-        .price-banner { background: #000; color: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 28px; text-align: center; margin: 0 auto 25px; position: sticky; top: 10px; z-index: 100; }
-        .price-tag { font-size: 52px; font-weight: 900; color: var(--accent); margin: 5px 0; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #222; }
         
-        .card { background: var(--card-bg); border-radius: 24px; padding: 22px; width: 100%; max-width: 440px; box-sizing: border-box; margin: 0 auto 20px; border: 1px solid var(--border); }
-        .tabs { display: flex; overflow-x: auto; background: var(--input); border-radius: 16px; padding: 5px; margin: 0 auto 20px; gap: 4px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; background: none; color: var(--gray); font-weight: bold; cursor: pointer; font-size: 10px; white-space: nowrap; }
-        .tab-btn.active { background: var(--accent); color: white; }
-        
-        label { display: block; margin: 15px 0 6px 4px; font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; border-radius: 16px; border: none; background: var(--input); color: var(--text); font-size: 16px; box-sizing: border-box; margin-bottom: 5px; }
+        /* Admin Sections */
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .admin-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .sub-tab { padding: 8px 15px; background: var(--input); border-radius: 10px; font-size: 11px; cursor: pointer; color: var(--gray); border: 1px solid var(--border); white-space: nowrap; }
+        .sub-tab.active { background: #333; color: white; border-color: var(--accent); }
+
+        /* UI Elements */
+        .card { background: var(--card-bg); border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
+        label { display: block; font-size: 10px; color: var(--gray); font-weight: bold; margin: 10px 0 5px 5px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--input); color: white; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .main-btn { background: var(--accent); color: white; border: none; padding: 18px; border-radius: 20px; width: 100%; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .round-btn { background: #333; color: #fff; border: none; padding: 5px 12px; border-radius: 10px; font-size: 10px; cursor: pointer; }
+        .main-btn { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        .item-row { background: var(--input); padding: 12px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-        .order-box { background: var(--input); padding: 15px; border-radius: 18px; margin-bottom: 12px; border: 1px solid var(--border); text-align: left; }
-        .btn-action { padding: 10px; border-radius: 10px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px; margin-right: 5px; color: white; }
-        #img_preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; aspect-ratio: 1/1; object-fit: cover; border: 1px solid var(--accent); }
+        /* Floating Cart */
+        #cart-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 20px rgba(255,87,34,0.4); }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 2000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-content { background: var(--card-bg); border-radius: 25px; padding: 20px; max-width: 400px; margin: auto; }
+
+        .order-item { background: var(--input); padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .price-big { font-size: 40px; font-weight: 900; color: var(--accent); text-align: center; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-        <div style="font-weight: 900; font-size: 20px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
-        <button onclick="document.body.classList.toggle('dark')" style="background:none; border:none; font-size:20px; cursor:pointer;">🌓</button>
+    <div class="main-nav" id="admin-nav">
+        <button class="nav-btn active" onclick="switchMainView('shop')">🛍 МАГАЗИН</button>
+        <button class="nav-btn" onclick="switchMainView('admin')">🔐 АДМІНКА</button>
     </div>
 
-    <div class="tabs" id="mode-nav" style="display:none">
-        <button class="tab-btn active" onclick="showView('shop-view', this)">🛍 МАГАЗИН</button>
-        <button class="tab-btn" onclick="showView('admin-view', this)">🔑 АДМІН</button>
+    <div id="view-shop">
+        <div style="font-weight: 900; font-size: 20px; margin-bottom: 15px;">DRYGUNY <span style="color:var(--accent)">3D</span></div>
+        <div class="shop-grid" id="shop-container">Завантаження товарів...</div>
     </div>
 
-    <div id="shop-view">
-        <div class="shop-categories">
-            <div class="cat-chip active" onclick="filterShop('Всі', this)">Всі</div>
-            <div class="cat-chip" onclick="filterShop('Дім', this)">🏠 Дім</div>
-            <div class="cat-chip" onclick="filterShop('Брелоки', this)">🔑 Брелоки</div>
-            <div class="cat-chip" onclick="filterShop('Інше', this)">📦 Інше</div>
+    <div id="view-admin" style="display:none">
+        <div class="admin-tabs">
+            <div class="sub-tab active" onclick="switchAdminTab('tab-calc', this)">🧮 КАЛЬКУЛЯТОР</div>
+            <div class="sub-tab" onclick="switchAdminTab('tab-orders', this)">📦 ЗАМОВЛЕННЯ</div>
+            <div class="sub-tab" onclick="switchAdminTab('tab-catalog', this)">📖 КАТАЛОГ</div>
+            <div class="sub-tab" onclick="switchAdminTab('tab-storage', this)">⚙️ НАЛАШТУВАННЯ</div>
         </div>
-        <div class="shop-grid" id="public-shop-list"></div>
-    </div>
 
-    <div id="admin-view" style="display:none">
-        <div class="price-banner">
-            <div id="res" class="price-tag">0 ₴</div>
-            <button class="round-btn" onclick="roundPrice()">ОКРУГЛИТИ ДО 10</button>
-            <div class="stats-grid">
-                <div class="stat-item"><span>Собіварт.</span><b id="total_cost">0</b> ₴</div>
-                <div class="stat-item"><span>Прибуток</span><b id="profit_val">0</b> ₴</div>
+        <div id="tab-calc" class="admin-section active">
+            <div class="price-big" id="res-price">0 ₴</div>
+            <div class="card">
+                <input type="text" id="p_name" placeholder="Назва моделі">
+                <textarea id="p_desc" placeholder="Опис моделі" style="margin-top:10px; height:60px;"></textarea>
+                <label>Фото</label>
+                <input type="file" accept="image/*" onchange="handleImage(this)">
+                <div class="row">
+                    <div><label>Категорія</label>
+                        <select id="p_cat"><option>Дім</option><option>Брелоки</option><option>Інше</option></select>
+                    </div>
+                    <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="runCalc()"></div>
+                </div>
+                <div class="row">
+                    <div><label>Години</label><input type="number" id="t_h" value="0" oninput="runCalc()"></div>
+                    <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="runCalc()"></div>
+                </div>
+                <label>Націнка: <span id="m_label">100</span>%</label>
+                <input type="range" id="m_val" min="0" max="500" value="100" oninput="document.getElementById('m_label').innerText=this.value; runCalc()">
+                <button class="main-btn" onclick="saveToFirebase()">💾 ВИСТАВИТИ НА ПРОДАЖ</button>
             </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('orders', this)">📝 ЗАМОВЛЕННЯ</button>
-            <button class="tab-btn" onclick="openTab('calc', this)">ГОЛОВНА</button>
-            <button class="tab-btn" onclick="openTab('catalog', this)">📖 КАТАЛОГ</button>
-            <button class="tab-btn" onclick="openTab('storage', this)">📦 СКЛАД</button>
+        <div id="tab-orders" class="admin-section">
+            <div id="orders-container">Завантаження замовлень...</div>
         </div>
 
-        <div id="orders" class="card tab-content">
-            <div id="orders-list">Завантаження...</div>
+        <div id="tab-catalog" class="admin-section">
+            <div id="catalog-manager"></div>
         </div>
 
-        <div id="calc" class="card tab-content" style="display:none">
-            <input type="text" id="p_name" placeholder="Назва моделі">
-            <input type="text" id="p_desc" placeholder="Опис">
-            <label>Фото</label>
-            <input type="file" accept="image/*" onchange="previewImage(this)">
-            <img id="img_preview">
-            <div class="row">
-                <div><label>Категорія</label><select id="p_cat"><option value="Дім">🏠 Дім</option><option value="Брелоки">🔑 Брелоки</option><option value="Інше">📦 Інше</option></select></div>
-                <div><label>Пластик</label><input type="number" id="p_price" value="850" oninput="saveSettings()"></div>
+        <div id="tab-storage" class="admin-section">
+            <div class="card">
+                <label>Ціна пластику (₴/кг)</label><input type="number" id="set_plastic" value="850" oninput="runCalc()">
+                <label>Амортизація (₴/год)</label><input type="number" id="set_amort" value="5" oninput="runCalc()">
+                <label>Електрика (₴/год)</label><input type="number" id="set_light" value="1" oninput="runCalc()">
+                <label>Робота (₴/фікс)</label><input type="number" id="set_work" value="50" oninput="runCalc()">
+                <label>Адгезія (₴)</label><input type="number" id="set_adh" value="3" oninput="runCalc()">
             </div>
-            <div class="row">
-                <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calc()"></div>
-                <div><label>Націнка (%)</label><input type="number" id="m" value="100" oninput="calc()"></div>
-            </div>
-            <div class="row">
-                <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
-                <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
-            </div>
-            <button class="main-btn" onclick="saveToCatalog()">💾 ЗБЕРЕГТИ В МАГАЗИН</button>
-        </div>
-
-        <div id="catalog" class="card tab-content" style="display:none"><div id="catalog-list"></div></div>
-
-        <div id="storage" class="card tab-content" style="display:none">
-            <label>Амортизація (₴/год)</label><input type="number" id="val_amort" value="5" oninput="saveSettings()">
-            <label>Електрика (₴/год)</label><input type="number" id="val_light" value="1" oninput="saveSettings()">
-            <label>Робота (₴/фікс)</label><input type="number" id="val_work_hour" value="50" oninput="saveSettings()">
-            <label>Адгезія (₴)</label><input type="number" id="val_adhesion" value="3" oninput="saveSettings()">
         </div>
     </div>
 
-    <div id="floating-cart" onclick="openOrderModal()">🛒 <span id="client-cart-count">0</span> ОФОРМИТИ</div>
-    <div id="order-modal" class="modal">
+    <div id="cart-bar" onclick="showOrderForm()">🛒 КОШИК: <span id="cart-count">0</span></div>
+
+    <div id="modal-order" class="modal">
         <div class="modal-content">
-            <h2 style="margin:0 0 15px;">Ваш кошик</h2>
-            <div id="client-cart-list"></div>
-            <input type="tel" id="order-phone" placeholder="Телефон">
-            <input type="text" id="order-fop" placeholder="ПІБ">
-            <button class="main-btn" onclick="checkout()">ЗАМОВИТИ</button>
-            <button class="main-btn" style="background:#444" onclick="document.getElementById('order-modal').style.display='none'">НАЗАД</button>
+            <h3 style="margin-top:0">Оформлення</h3>
+            <div id="cart-items-list" style="margin-bottom:15px;"></div>
+            <input type="text" id="cust-name" placeholder="Твоє ПІБ">
+            <input type="tel" id="cust-phone" placeholder="Номер телефону" style="margin-top:10px;">
+            <button class="main-btn" onclick="sendOrder()">ВІДПРАВИТИ ЗАМОВЛЕННЯ</button>
+            <button class="main-btn" style="background:#333; margin-top:8px;" onclick="closeModal()">ЗАКРИТИ</button>
         </div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        const ADMIN_ID = 6259271140; 
-        const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
-        let catalog = [], clientCart = [], currentImg = "";
+        const ADMIN_ID = 6259271140;
+        const DB = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
+        
+        let catalog = [];
+        let cart = [];
+        let tempImg = "";
 
-        async function loadData() {
-            const res = await fetch(`${DB_URL}/catalog.json`);
-            const data = await res.json();
-            catalog = data ? Object.values(data) : [];
-            renderPublicShop();
+        // --- Navigation Logic ---
+        function switchMainView(view) {
+            document.getElementById('view-shop').style.display = (view === 'shop') ? 'block' : 'none';
+            document.getElementById('view-admin').style.display = (view === 'admin') ? 'block' : 'none';
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(view.toUpperCase())));
         }
 
-        function renderPublicShop(filter = 'Всі') {
-            const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
-            document.getElementById('public-shop-list').innerHTML = filtered.map(i => `
-                <div class="product-card">
-                    <img src="${i.img || ''}" class="product-img">
-                    <div class="product-info">
-                        <div class="product-title">${i.name}</div>
-                        <div class="product-price">${i.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="addToCart('${i.name}', ${i.calculated_price})">В КОШИК</button>
-                    </div>
-                </div>`).join('');
+        function switchAdminTab(tabId, btn) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            if(tabId === 'tab-orders') loadOrders();
+            if(tabId === 'tab-catalog') renderManager();
         }
 
-        function addToCart(name, price) {
-            clientCart.push({name, price});
-            document.getElementById('client-cart-count').innerText = clientCart.length;
-            document.getElementById('floating-cart').style.display = 'flex';
+        // --- Calculator Logic ---
+        function runCalc() {
+            let w = parseFloat(document.getElementById('w').value) || 0;
+            let h = parseFloat(document.getElementById('t_h').value) || 0;
+            let m = parseFloat(document.getElementById('t_m').value) || 0;
+            let plasticPrice = parseFloat(document.getElementById('set_plastic').value) || 850;
+            
+            let plasticCost = w * (plasticPrice / 1000);
+            let time = h + (m / 60);
+            let techCost = time * (parseFloat(document.getElementById('set_amort').value) + parseFloat(document.getElementById('set_light').value));
+            
+            let margin = parseFloat(document.getElementById('m_val').value) / 100;
+            let total = (plasticCost + techCost) * (1 + margin) + parseFloat(document.getElementById('set_work').value) + parseFloat(document.getElementById('set_adh').value);
+            
+            document.getElementById('res-price').innerText = Math.round(total) + " ₴";
+            return Math.round(total);
         }
 
-        function openOrderModal() {
-            document.getElementById('order-modal').style.display = 'flex';
-            document.getElementById('client-cart-list').innerHTML = clientCart.map((i, idx) => 
-                `<div class="item-row"><span>${i.name}</span><b onclick="clientCart.splice(${idx},1);openOrderModal()">✕</b></div>`).join('');
-        }
-
-        async function checkout() {
-            const phone = document.getElementById('order-phone').value;
-            const fop = document.getElementById('order-fop').value;
-            if(!phone || !fop || !clientCart.length) return alert("Заповніть дані");
-            const order = { id: Date.now(), phone, fop, items: clientCart.map(i=>i.name).join(", "), total: clientCart.reduce((s,i)=>s+i.price,0) };
-            await fetch(`${DB_URL}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
-            alert("Замовлення надіслано!");
-            clientCart = []; document.getElementById('order-modal').style.display = 'none';
-            document.getElementById('floating-cart').style.display = 'none';
-        }
-
-        function calc() {
-            let plastic = (parseFloat(document.getElementById('w').value)||0) * (parseFloat(document.getElementById('p_price').value)/1000);
-            let time = (parseFloat(document.getElementById('t_h').value)||0) + (parseFloat(document.getElementById('t_m').value)/60);
-            let tech = time * (parseFloat(document.getElementById('val_amort').value) + parseFloat(document.getElementById('val_light').value));
-            let cost = plastic + tech + parseFloat(document.getElementById('val_work_hour').value) + parseFloat(document.getElementById('val_adhesion').value);
-            let final = (plastic + tech) * (1 + parseFloat(document.getElementById('m').value)/100) + parseFloat(document.getElementById('val_work_hour').value);
-            document.getElementById('res').innerText = Math.round(final) + " ₴";
-            document.getElementById('total_cost').innerText = Math.round(cost);
-            document.getElementById('profit_val').innerText = Math.round(final - cost);
-            return Math.round(final);
-        }
-
-        async function saveToCatalog() {
-            let name = document.getElementById('p_name').value;
-            if(!name) return alert("Назва!");
-            let p = { id: Date.now(), name, category: document.getElementById('p_cat').value, calculated_price: calc(), img: currentImg, description: document.getElementById('p_desc').value };
-            await fetch(`${DB_URL}/catalog/${p.id}.json`, { method: 'PUT', body: JSON.stringify(p) });
-            alert("Збережено!"); loadData();
-        }
-
-        function previewImage(input) {
+        function handleImage(input) {
             const reader = new FileReader();
-            reader.onload = e => { currentImg = e.target.result; document.getElementById('img_preview').src = currentImg; document.getElementById('img_preview').style.display = 'block'; };
+            reader.onload = e => tempImg = e.target.result;
             reader.readAsDataURL(input.files[0]);
         }
 
-        function showView(id, btn) {
-            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
-            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
-            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'admin-view') loadOrders();
+        async function saveToFirebase() {
+            let name = document.getElementById('p_name').value;
+            if(!name) return alert("Вкажи назву!");
+            let product = {
+                id: Date.now(),
+                name: name,
+                desc: document.getElementById('p_desc').value,
+                price: runCalc(),
+                cat: document.getElementById('p_cat').value,
+                img: tempImg
+            };
+            await fetch(`${DB}/catalog/${product.id}.json`, { method: 'PUT', body: JSON.stringify(product) });
+            alert("Товар додано!");
+            loadCatalog();
         }
 
-        function openTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'catalog') renderCatalogList();
+        // --- Shop & Cart Logic ---
+        async function loadCatalog() {
+            const res = await fetch(`${DB}/catalog.json`);
+            const data = await res.json();
+            catalog = data ? Object.values(data) : [];
+            renderShop();
         }
 
-        function renderCatalogList() {
-            document.getElementById('catalog-list').innerHTML = catalog.map(i => `
-                <div class="item-row"><span>${i.name}</span><button onclick="deleteProduct('${i.id}')" style="color:red;border:none;background:none">✕</button></div>`).join('');
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = catalog.map(p => `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img">
+                    <div class="product-info">
+                        <div class="product-title">${p.name}</div>
+                        <div class="product-price">${p.price} ₴</div>
+                        <button class="main-btn" style="padding:8px; font-size:12px;" onclick="addToCart('${p.name}', ${p.price})">КУПИТИ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(name, price) {
+            cart.push({name, price});
+            document.getElementById('cart-count').innerText = cart.length;
+            document.getElementById('cart-bar').style.display = 'block';
+        }
+
+        function showOrderForm() {
+            document.getElementById('modal-order').style.display = 'block';
+            document.getElementById('cart-items-list').innerHTML = cart.map((item, i) => `
+                <div class="order-item">
+                    <span>${item.name}</span>
+                    <button onclick="cart.splice(${i},1); showOrderForm();" style="border:none; background:none; color:red;">✕</button>
+                </div>
+            `).join('');
+            if(cart.length === 0) closeModal();
+        }
+
+        async function sendOrder() {
+            let name = document.getElementById('cust-name').value;
+            let phone = document.getElementById('cust-phone').value;
+            if(!name || !phone) return alert("Заповни дані!");
+
+            let order = {
+                id: Date.now(),
+                customer: name,
+                phone: phone,
+                items: cart.map(i => i.name).join(", "),
+                total: cart.reduce((a, b) => a + b.price, 0)
+            };
+
+            await fetch(`${DB}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
+            alert("Дякуємо! Замовлення прийнято.");
+            cart = [];
+            closeModal();
+            document.getElementById('cart-bar').style.display = 'none';
+        }
+
+        // --- Admin Management ---
+        async function loadOrders() {
+            const res = await fetch(`${DB}/orders.json`);
+            const data = await res.json();
+            const container = document.getElementById('orders-container');
+            if(!data) return container.innerHTML = "Замовлень поки немає";
+            
+            container.innerHTML = Object.values(data).reverse().map(o => `
+                <div class="card">
+                    <b>👤 ${o.customer}</b><br>
+                    📞 ${o.phone}<br>
+                    <div style="font-size:12px; color:var(--gray); margin:5px 0;">${o.items}</div>
+                    <b style="color:var(--accent)">${o.total} ₴</b><br>
+                    <div class="row" style="margin-top:10px;">
+                        <button class="nav-btn" style="background:#4caf50; color:white; font-size:10px;" onclick="copyOrder('${o.customer}', '${o.phone}', '${o.items}')">КОПІЮВАТИ</button>
+                        <button class="nav-btn" style="background:#f44336; color:white; font-size:10px;" onclick="deleteOrder('${o.id}')">ВИДАЛИТИ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderManager() {
+            document.getElementById('catalog-manager').innerHTML = catalog.map(p => `
+                <div class="order-item">
+                    <span>${p.name}</span>
+                    <button onclick="deleteProduct('${p.id}')" style="color:red; border:none; background:none;">ВИДАЛИТИ</button>
+                </div>
+            `).join('');
         }
 
         async function deleteProduct(id) {
-            if(confirm("Видалити?")) { await fetch(`${DB_URL}/catalog/${id}.json`, { method: 'DELETE' }); loadData(); renderCatalogList(); }
-        }
-
-        async function loadOrders() {
-            const res = await fetch(`${DB_URL}/orders.json`);
-            const data = await res.json();
-            document.getElementById('orders-list').innerHTML = data ? Object.values(data).reverse().map(o => `
-                <div class="order-box">
-                    <b>👤 ${o.fop}</b><br>📞 ${o.phone}<br><small>📦 ${o.items}</small><br><b>💰 ${o.total} ₴</b><br>
-                    <button class="btn-action" style="background:#4caf50" onclick="copyOrder('${o.fop}','${o.phone}','${o.items}','${o.total}')">📋 КОПІЮВАТИ</button>
-                    <button class="btn-action" style="background:#f44336" onclick="deleteOrder('${o.id}')">✕</button>
-                </div>`).join('') : "Немає замовлень";
-        }
-
-        function copyOrder(fop, phone, items, total) {
-            navigator.clipboard.writeText(`Клієнт: ${fop}\nТел: ${phone}\nТовари: ${items}\nСума: ${total} ₴`);
-            alert("Скопійовано!");
+            if(confirm("Видалити товар?")) {
+                await fetch(`${DB}/catalog/${id}.json`, { method: 'DELETE' });
+                loadCatalog();
+                setTimeout(renderManager, 500);
+            }
         }
 
         async function deleteOrder(id) {
-            if(confirm("Видалити замовлення?")) { await fetch(`${DB_URL}/orders/${id}.json`, { method: 'DELETE' }); loadOrders(); }
+            if(confirm("Видалити замовлення?")) {
+                await fetch(`${DB}/orders/${id}.json`, { method: 'DELETE' });
+                loadOrders();
+            }
         }
 
-        function saveSettings() {
-            const s = {};
-            ['p_price','val_amort','val_light','val_work_hour','val_adhesion'].forEach(id => s[id] = document.getElementById(id).value);
-            localStorage.setItem('dryguny_settings', JSON.stringify(s));
-            calc();
+        function copyOrder(c, p, i) {
+            navigator.clipboard.writeText(`Клієнт: ${c}\nТел: ${p}\nЗамовлення: ${i}`);
+            alert("Дані копійовано!");
         }
 
+        function closeModal() { document.getElementById('modal-order').style.display = 'none'; }
+
+        // Start
         window.onload = () => {
-            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) document.getElementById('mode-nav').style.display = 'flex';
-            const s = JSON.parse(localStorage.getItem('dryguny_settings') || '{}');
-            for(let key in s) if(document.getElementById(key)) document.getElementById(key).value = s[key];
-            loadData();
+            if (tg.initDataUnsafe?.user?.id === ADMIN_ID) {
+                document.getElementById('admin-nav').style.display = 'flex';
+            }
+            loadCatalog();
         };
     </script>
 </body>
 </html>
-            <button class="round-btn" onclick="roundPrice()">ОКРУГЛИТИ ДО 10</button>
-            <div class="stats-grid">
-                <div class="stat-item"><span>Собіварт.</span><b id="total_cost">0</b> ₴</div>
-                <div class="stat-item"><span>Прибуток</span><b id="profit_val">0</b> ₴</div>
-            </div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('orders', this)">📝 ЗАМОВЛЕННЯ</button>
-            <button class="tab-btn" onclick="openTab('calc', this)">ГОЛОВНА</button>
-            <button class="tab-btn" onclick="openTab('catalog', this)">📖 КАТАЛОГ</button>
-            <button class="tab-btn" onclick="openTab('storage', this)">📦 СКЛАД</button>
-        </div>
-
-        <div id="orders" class="card tab-content">
-            <div id="orders-list">Завантаження...</div>
-        </div>
-
-        <div id="calc" class="card tab-content" style="display:none">
-            <input type="text" id="p_name" placeholder="Назва моделі">
-            <input type="text" id="p_desc" placeholder="Опис">
-            <label>Фото товару</label>
-            <input type="file" accept="image/*" onchange="previewImage(this)">
-            <img id="img_preview">
-            
-            <div class="row">
-                <div><label>Категорія</label><select id="p_cat"><option value="Дім">🏠 Дім</option><option value="Брелоки">🔑 Брелоки</option><option value="Інше">📦 Інше</option></select></div>
-                <div><label>Пластик (₴)</label><input type="number" id="p_price" value="850" oninput="saveSettings()"></div>
-            </div>
-            <div class="row">
-                <div><label>Котушка (г)</label><input type="number" id="spool_w" value="1000" oninput="saveSettings()"></div>
-                <div><label>Брак (%)</label><input type="number" id="fail_percent" value="0" oninput="calc()"></div>
-            </div>
-            <div class="row">
-                <div><label>Вага (г)</label><input type="number" id="w" value="0" oninput="calc()"></div>
-                <div><label>Адгезія (₴)</label><input type="number" id="val_adhesion" value="3" oninput="saveSettings()"></div>
-            </div>
-            <div class="row">
-                <div><label>Години</label><input type="number" id="t_h" value="0" oninput="calc()"></div>
-                <div><label>Хвилини</label><input type="number" id="t_m" value="0" oninput="calc()"></div>
-            </div>
-            <label>Націнка: <span id="m_val">100</span>%</label>
-            <input type="range" id="m" min="0" max="500" value="100" oninput="document.getElementById('m_val').innerText=this.value; calc()">
-            
-            <button class="main-btn" onclick="saveToCatalog()">💾 ЗБЕРЕГТИ В МАГАЗИН</button>
-        </div>
-
-        <div id="catalog" class="card tab-content" style="display:none"><div id="catalog-list"></div></div>
-        
-        <div id="storage" class="card tab-content" style="display:none">
-            <label>Амортизація (₴/год)</label><input type="number" id="val_amort" value="5" oninput="saveSettings()">
-            <label>Електрика (₴/год)</label><input type="number" id="val_light" value="1" oninput="saveSettings()">
-            <label>Робота (₴/фікс)</label><input type="number" id="val_work_hour" value="50" oninput="saveSettings()">
-        </div>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        const ADMIN_ID = 6259271140; 
-        const DB_URL = "https://magazin-7f3f2-default-rtdb.europe-west1.firebasedatabase.app/";
-
-        let catalog = [];
-        let clientCart = []; 
-        let currentImg = "";
-
-        function updateClientCartUI() {
-            document.getElementById('client-cart-count').innerText = clientCart.length;
-            document.getElementById('floating-cart').style.display = clientCart.length > 0 ? 'flex' : 'none';
-        }
-
-        function openProductDetails(id) {
-            const item = catalog.find(i => i.id == id);
-            if(!item) return;
-            const content = document.getElementById('product-detail-content');
-            content.innerHTML = `
-                <img src="${item.img || ''}" class="full-img">
-                <h2 style="margin:0 0 10px;">${item.name}</h2>
-                <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">${item.description || 'Опис відсутній'}</p>
-                <div style="display:flex; align-items:center; gap:15px; background:var(--input); padding:15px; border-radius:18px;">
-                    <div><label style="margin:0;">К-сть</label><input type="number" id="modal-qty" value="1" min="1" class="qty-input"></div>
-                    <div style="flex-grow:1; text-align:right;"><div style="font-size:22px; font-weight:900; color:var(--accent);">${item.calculated_price} ₴</div></div>
-                </div>
-                <button class="main-btn" onclick="addToCartWithQty('${item.name}', ${item.calculated_price})">ДОДАТИ</button>
-            `;
-            document.getElementById('product-modal').style.display = 'flex';
-        }
-
-        function addToCartWithQty(name, price) {
-            const qty = parseInt(document.getElementById('modal-qty').value) || 1;
-            for(let i=0; i<qty; i++) clientCart.push({ name, price });
-            updateClientCartUI();
-            document.getElementById('product-modal').style.display = 'none';
-        }
-
-        function addClientToCart(event, name, price) {
-            event.stopPropagation();
-            clientCart.push({ name, price });
-            updateClientCartUI();
-        }
-
-        function openOrderModal() {
-            document.getElementById('order-modal').style.display = 'flex';
-            document.getElementById('client-cart-list').innerHTML = clientCart.map((item, index) => `
-                <div class="item-row"><span>${item.name}</span><button onclick="clientCart.splice(${index},1);openOrderModal();updateClientCartUI()" style="color:red;border:none;background:none">✕</button></div>`).join('');
-        }
-
-        async function checkout() {
-            const phone = document.getElementById('order-phone').value;
-            const fop = document.getElementById('order-fop').value;
-            if(!phone || !fop || clientCart.length === 0) return alert("Заповніть дані");
-            const order = { id: Date.now(), phone, fop, items: clientCart.map(i => i.name).join(", "), total: clientCart.reduce((s,i)=>s+i.price,0) };
-            await fetch(`${DB_URL}/orders/${order.id}.json`, { method: 'PUT', body: JSON.stringify(order) });
-            alert("Замовлення надіслано!");
-            clientCart = []; updateClientCartUI(); document.getElementById('order-modal').style.display = 'none';
-        }
-
-        function calc() {
-            let pPrice = parseFloat(document.getElementById('p_price').value) || 0;
-            let spoolW = parseFloat(document.getElementById('spool_w').value) || 1000;
-            let w = parseFloat(document.getElementById('w').value) || 0;
-            let h = parseFloat(document.getElementById('t_h').value) || 0;
-            let min = parseFloat(document.getElementById('t_m').value) || 0;
-            let m = parseFloat(document.getElementById('m').value);
-            let amort = parseFloat(document.getElementById('val_amort').value) || 0;
-            let light = parseFloat(document.getElementById('val_light').value) || 0;
-            let work = parseFloat(document.getElementById('val_work_hour').value) || 0;
-            let adhesion = parseFloat(document.getElementById('val_adhesion').value) || 0;
-
-            let plasticCost = w * (pPrice/spoolW);
-            let techCost = (h + min/60) * (amort + light);
-            let cost = plasticCost + techCost + work + adhesion;
-            let final = (plasticCost + techCost) * (1 + m/100) + work + adhesion;
-            
-            document.getElementById('res').innerText = Math.round(final) + " ₴";
-            document.getElementById('total_cost').innerText = Math.round(cost);
-            document.getElementById('profit_val').innerText = Math.round(final - cost);
-            return Math.round(final);
-        }
-
-        async function saveToCatalog() {
-            let name = document.getElementById('p_name').value;
-            if(!name) return alert("Введи назву");
-            let product = { id: Date.now(), name, description: document.getElementById('p_desc').value, category: document.getElementById('p_cat').value, calculated_price: calc(), img: currentImg };
-            await fetch(`${DB_URL}/catalog/${product.id}.json`, { method: 'PUT', body: JSON.stringify(product) });
-            alert("Збережено!"); loadSharedCatalog();
-        }
-
-        function previewImage(input) {
-            const reader = new FileReader();
-            reader.onload = e => { currentImg = e.target.result; document.getElementById('img_preview').src = currentImg; document.getElementById('img_preview').style.display = 'block'; };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function roundPrice() {
-            let p = parseInt(document.getElementById('res').innerText);
-            document.getElementById('res').innerText = (Math.ceil(p / 10) * 10) + " ₴";
-        }
-
-        function saveSettings() {
-            const s = {};
-            ['p_price','spool_w','val_amort','val_light','val_work_hour','val_adhesion'].forEach(id => {
-                s[id] = document.getElementById(id).value;
-            });
-            localStorage.setItem('dryguny_settings', JSON.stringify(s));
-            calc();
-        }
-
-        async function loadSharedCatalog() {
-            const res = await fetch(`${DB_URL}/catalog.json`);
-            const data = await res.json();
-            catalog = data ? Object.values(data) : [];
-            renderPublicShop();
-        }
-
-        function renderPublicShop(filter = 'Всі') {
-            const filtered = filter === 'Всі' ? catalog : catalog.filter(i => i.category === filter);
-            document.getElementById('public-shop-list').innerHTML = filtered.map(i => `
-                <div class="product-card" onclick="openProductDetails(${i.id})">
-                    <img src="${i.img || ''}" class="product-img">
-                    <div class="product-info">
-                        <div class="product-title">${i.name}</div>
-                        <div class="product-price">${i.calculated_price} ₴</div>
-                        <button class="buy-btn" onclick="addClientToCart(event, '${i.name}', ${i.calculated_price})">В КОШИК</button>
-                    </div>
-                </div>`).join('');
-        }
-
-        function filterShop(cat, btn) {
-            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            renderPublicShop(cat);
-        }
-
-        function showView(id, btn) {
-            document.getElementById('shop-view').style.display = (id === 'shop-view') ? 'block' : 'none';
-            document.getElementById('admin-view').style.display = (id === 'admin-view') ? 'block' : 'none';
-            document.querySelectorAll('#mode-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'admin-view') loadOrders();
-        }
-
-        function openTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            document.querySelectorAll('#admin-view .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'catalog') renderCatalogList();
-        }
-
-        function renderCatalogList() {
-            document.getElementById('catalog-list').innerHTML = catalog.map(i => `
-                <div class="item-row">
-                    <span>${i.name} (${i.calculated_price} ₴)</span>
-                    <button onclick="deleteProduct('${i.id}')" style="color:red;border:none;background:none;">✕</button>
-                </div>`).join('');
-        }
-
-        async function deleteProduct(id) {
-            if(confirm("Видалити з каталогу?")) {
-       
