@@ -8,19 +8,24 @@ import base64
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
-import aiohttp
 from aiohttp import web
+import google.generativeai as genai
 
-# --- 1. НАЛАШТУВАННЯ ---
+# --- 1. НАЛАШТУВАННЯ (БЕЗПЕЧНЕ) ---
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc"
-GEMINI_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
+# Отримуємо ключі з оточення Render
+TOKEN = os.getenv("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
+GEMINI_KEY = os.getenv("GEMINI_KEY", "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk")
 ADMIN_ID = 6259271140 
+
+# Налаштування Gemini через офіційну бібліотеку
+genai.configure(api_key=GEMINI_KEY)
+gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -29,60 +34,27 @@ class DescGen(StatesGroup):
     waiting_for_input = State()
     waiting_for_price = State()
 
-class ShopAdmin(StatesGroup):
-    waiting_for_value = State()
-    waiting_for_photo = State()
-
-product_drafts = {}
-DB_FILE = "products.json"
-
-# --- МІДЛВЕР ДЛЯ АДМІНА ---
-@dp.message.outer_middleware()
-async def admin_only_middleware(handler, event: types.Message, data):
-    if event.from_user.id != ADMIN_ID: return 
-    return await handler(event, data)
-
-# --- 2. ФУНКЦІЯ ШІ (ВИПРАВЛЕНА URL ТА СТРУКТУРА) ---
+# --- 2. ФУНКЦІЯ ШІ (ОПТИМІЗОВАНА) ---
 async def ask_gemini(prompt, photo_bytes=None):
-    # Оновлений URL для Gemini 1.5 Flash
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
-    
-    headers = {'Content-Type': 'application/json'}
-    
-    parts = [{"text": prompt}]
-    if photo_bytes:
-        parts.append({
-            "inline_data": {
+    try:
+        content = []
+        if photo_bytes:
+            content.append({
                 "mime_type": "image/jpeg",
-                "data": base64.b64encode(photo_bytes).decode('utf-8')
-            }
-        })
+                "data": photo_bytes
+            })
+        content.append(prompt)
 
-    payload = {
-        "contents": [{
-            "parts": parts
-        }]
-    }
+        # Запуск у фоновому потоці для Render
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(None, lambda: gemini_model.generate_content(content))
+        
+        return response.text if response.text else "❌ ШІ не зміг згенерувати опис."
+    except Exception as e:
+        logging.error(f"Gemini Error: {e}")
+        return f"❌ Помилка ШІ: Перевірте API ключ в налаштуваннях Render."
 
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(url, json=payload, headers=headers) as resp:
-                if resp.status != 200:
-                    error_text = await resp.text()
-                    logging.error(f"Gemini Error: {resp.status} - {error_text}")
-                    return f"❌ Помилка сервера ШІ: {resp.status}. Перевірте налаштування в Google AI Studio."
-                
-                result = await resp.json()
-                # Перевірка наявності відповіді в структурі JSON
-                if 'candidates' in result and result['candidates']:
-                    return result['candidates'][0]['content']['parts'][0]['text']
-                else:
-                    return "❌ ШІ повернув порожню відповідь. Спробуйте інше фото або назву."
-        except Exception as e:
-            logging.error(f"Network error: {e}")
-            return "❌ Помилка мережі при зверненні до ШІ."
-
-# --- ОНОВЛЕНА КЛАВІАТУРА (ЩОБ ВСЕ БУЛО ВИДНО) ---
+# --- 3. КЛАВІАТУРА ---
 def get_main_keyboard():
     kb = [
         [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")],
@@ -91,32 +63,19 @@ def get_main_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
-# --- 3. ЛОГІКА МАГАЗИНУ ---
-def load_products():
-    if not os.path.exists(DB_FILE): return []
-    with open(DB_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+# --- 4. ХЕНДЛЕРИ ---
 
-def save_products(products):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(products, f, ensure_ascii=False, indent=4)
-
-# --- 4. КЛАВІАТУРИ (ВИПРАВЛЕНО) ---
-def get_main_keyboard():
-    # Робимо кнопки у 2 ряди, щоб все було видно
-    kb = [
-        [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")],
-        [KeyboardButton(text="📝 Опис для Insta (ШІ)")],
-        [KeyboardButton(text="💡 Ідея для друку"), KeyboardButton(text="🔍 Пошук STL")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-
-# --- 5. ХЕНДЛЕРИ ШІ-ОПИСУ ---
+@dp.message(Command("start"))
+async def start_handler(message: types.Message):
+    await message.answer(
+        "🚀 **Dryguny 3D Hub** готовий до роботи!",
+        reply_markup=get_main_keyboard(),
+        parse_mode="Markdown"
+    )
 
 @dp.message(F.text == "📝 Опис для Insta (ШІ)")
-@dp.message(Command("description"))
 async def desc_start(message: types.Message, state: FSMContext):
-    await message.answer("🤖 Надішли назву товару або **фото статуетки**, щоб я її описав!")
+    await message.answer("🤖 Надішли назву або **фото**, щоб я створив пост!")
     await state.set_state(DescGen.waiting_for_input)
 
 @dp.message(DescGen.waiting_for_input)
@@ -124,31 +83,27 @@ async def desc_input(message: types.Message, state: FSMContext):
     if message.photo:
         photo = message.photo[-1]
         file_info = await bot.get_file(photo.file_id)
-        photo_bytes = await bot.download_file(file_info.file_path)
-        await state.update_data(photo=photo_bytes.read(), name="статуетка з фото")
-        await message.answer("📸 Фото отримано! Яка ціна буде в пості?")
+        photo_data = await bot.download_file(file_info.file_path)
+        # Зберігаємо байти для Gemini
+        await state.update_data(photo=photo_data.read(), name="модель з фото")
+        await message.answer("📸 Фото отримано! Вкажіть ціну:")
     elif message.text:
         await state.update_data(name=message.text, photo=None)
-        await message.answer(f"Назва: {message.text}\nВведи ціну:")
-    else:
-        return await message.answer("Будь ласка, надішли текст або фото.")
+        await message.answer(f"Назва: {message.text}\nВведіть ціну:")
     await state.set_state(DescGen.waiting_for_price)
 
 @dp.message(DescGen.waiting_for_price)
 async def desc_final(message: types.Message, state: FSMContext):
     price = message.text
     user_data = await state.get_data()
-    wait_msg = await message.answer("⏳ Dryguny AI аналізує модель...")
+    wait_msg = await message.answer("⏳ Dryguny AI чаклує над описом...")
     
     prompt = (
-        f"Напиши пост для Instagram бренду 'Dryguny'. Товар: {user_data.get('name')}. "
-        f"Ціна: {price} грн. Дотримуйся шаблону:\n"
-        "1. Креативна назва + емодзі\n"
-        f"2. {price} грн💵\n"
-        "3. Моделі в наявності або виготовлення 1-3 дні📅\n"
-        "4. Друк ваших ідей під замовлення✨\n"
-        "5. Безпечний пластик PLA♻️\n"
-        "Пиши коротко, модно, українською."
+        f"Ти копірайтер бренду 'Dryguny'. Напиши пост в Instagram. "
+        f"Товар: {user_data.get('name')}. Ціна: {price} грн. "
+        "Структура: 1. Назва+емодзі. 2. Ціна. 3. Терміни (1-3 дні). "
+        "4. Заклик до замовлення. 5. Хештеги #dryguny #3dprint. "
+        "Стиль: сучасний, українською."
     )
 
     ai_text = await ask_gemini(prompt, user_data.get('photo'))
@@ -156,45 +111,29 @@ async def desc_final(message: types.Message, state: FSMContext):
     await message.answer(f"<code>{ai_text}</code>", parse_mode="HTML")
     await state.clear()
 
-# --- 6. КОМАНДИ ---
-
-@dp.message(Command("start"))
-async def start_handler(message: types.Message):
-    await message.answer(
-        "🚀 **Dryguny 3D Hub** активний!\n\nВикористовуй меню нижче для роботи з магазином або генерації постів.",
-        reply_markup=get_main_keyboard(),
-        parse_mode="Markdown"
-    )
+# --- ДОДАТКОВІ ФУНКЦІЇ ---
 
 @dp.message(F.text == "💡 Ідея для друку")
-@dp.message(Command("idea"))
 async def idea_handler(message: types.Message):
-    keywords = ["dragon", "robot", "cat", "gadget", "figurine"]
-    keyword = random.choice(keywords)
-    q = urllib.parse.quote(keyword)
-    await message.answer(f"🧠 Ідея: **{keyword}**\n🔗 [MakerWorld](https://makerworld.com/search/models?keyword={q})", parse_mode="Markdown")
+    ideas = ["Dinosaur", "Phone Stand", "Articulated Dragon", "Tool Organizer"]
+    keyword = random.choice(ideas)
+    url = f"https://makerworld.com/search/models?keyword={urllib.parse.quote(keyword)}"
+    await message.answer(f"💡 Ідея: **{keyword}**\n🔗 [Шукати на MakerWorld]({url})", parse_mode="Markdown")
 
-@dp.message(F.text == "🔍 Пошук STL")
-async def find_info(message: types.Message):
-    await message.answer("Використовуй команду: `/find назва`", parse_mode="Markdown")
-
-@dp.message(Command("find"))
-async def find_handler(message: types.Message):
-    query = message.text.replace("/find", "").strip()
-    if not query: return await message.answer("Введи що шукати після команди.")
-    q = urllib.parse.quote(query)
-    markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Дивитись на MakerWorld", url=f"https://makerworld.com/en/search/models?keyword={q}")]])
-    await message.answer(f"🔎 Моделі для `{query}`:", reply_markup=markup, parse_mode="Markdown")
-
-# --- ЗАПУСК ---
-async def handle_ping(request): return web.Response(text="Bot Active")
+# --- ЗАПУСК ВЕБ-СЕРВЕРА ТА БОТА ---
+async def handle_ping(request):
+    return web.Response(text="Bot is running")
 
 async def main():
+    # Налаштування веб-сервера для Render
     app = web.Application()
     app.router.add_get("/", handle_ping)
     runner = web.AppRunner(app)
     await runner.setup()
-    await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080))).start()
+    port = int(os.environ.get("PORT", 8080))
+    await web.TCPSite(runner, "0.0.0.0", port).start()
+    
+    # Запуск бота
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
