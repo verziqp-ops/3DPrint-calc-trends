@@ -42,25 +42,6 @@ product_drafts = {}
 
 # --- 2. КЛАВІАТУРИ ---
 
-d#ef get_main_keyboard(user_id):   web_app_url = "https://dryguny.com.ua" 
-   # buttons = [[KeyboardButton(text="🛍 ВІДКРИТИ МАГАЗИН", web_app=WebAppInfo(url=web_app_url))]]
-    
-  #  if user_id == ADMIN_ID:
-       # buttons.append([KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")])
-        
-    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
-
-def get_edit_keyboard():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✏️ Назва", callback_data="edit_name"), 
-         InlineKeyboardButton(text="✏️ Опис", callback_data="edit_desc")],
-        [InlineKeyboardButton(text="💰 Ціна", callback_data="edit_price"), 
-         InlineKeyboardButton(text="📦 Опт", callback_data="edit_opt")],
-        [InlineKeyboardButton(text="📂 Категорія", callback_data="edit_cat")],
-        [InlineKeyboardButton(text="🖼 Змінити зображення", callback_data="edit_photo")],
-        [InlineKeyboardButton(text="✅ ПІДТВЕРДИТИ ТА В МАГАЗИН", callback_data="confirm_shop")]
-    ])
-
 # --- 3. КОМАНДИ ПОШУКУ (ТВОЇ ОРИГІНАЛЬНІ) ---
 
 #@dp.message(Command("start"))
