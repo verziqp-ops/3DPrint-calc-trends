@@ -64,7 +64,7 @@ def get_edit_keyboard():
 
 # --- 3. КОМАНДИ ПОШУКУ (ТВОЇ ОРИГІНАЛЬНІ) ---
 
-@dp.message(Command("start"))
+#@dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
         "🚀 **Вітаємо у Dryguny 3D Hub!**\n\n"
