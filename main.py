@@ -22,6 +22,19 @@ ADMIN_ID = 6259271140
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
+# --- ОБМЕЖЕННЯ ДОСТУПУ (Тільки ти) ---
+@dp.message.outer_middleware()
+async def admin_only_middleware(handler, event: types.Message, data):
+    if event.from_user.id != ADMIN_ID:
+        return # Бот просто мовчить, якщо пише не адмін
+    return await handler(event, data)
+
+@dp.callback_query.outer_middleware()
+async def admin_only_callback_middleware(handler, event: types.CallbackQuery, data):
+    if event.from_user.id != ADMIN_ID:
+        return 
+    return await handler(event, data)
+
 DB_FILE = "products.json"
 
 # Функції для роботи з базою даних (JSON)
@@ -40,11 +53,23 @@ class ShopAdmin(StatesGroup):
 
 product_drafts = {}
 
-# --- 2. КЛАВІАТУРИ ---
+# --- 2. КЛАВІАТУРИ (Заглушки для функцій, якщо їх немає в коді) ---
+def get_main_keyboard(user_id):
+    kb = [
+        [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
-# --- 3. КОМАНДИ ПОШУКУ (ТВОЇ ОРИГІНАЛЬНІ) ---
+def get_edit_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📝 Назва", callback_data="edit_name"), InlineKeyboardButton(text="💰 Ціна", callback_data="edit_price")],
+        [InlineKeyboardButton(text="🖼 Фото", callback_data="edit_photo")],
+        [InlineKeyboardButton(text="✅ ПІДТВЕРДИТИ", callback_data="confirm_shop")]
+    ])
 
-#@dp.message(Command("start"))
+# --- 3. КОМАНДИ ПОШУКУ ---
+
+@dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
         "🚀 **Вітаємо у Dryguny 3D Hub!**\n\n"
@@ -101,13 +126,12 @@ async def top_handler(message: types.Message):
 @dp.message(F.text == "⚙️ Керувати магазином")
 @dp.message(Command("manage"))
 async def manage_products(message: types.Message):
-    if message.from_user.id != ADMIN_ID: return
     products = load_products()
     if not products: return await message.answer("Магазин порожній.")
     
     for idx, p in enumerate(products):
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🗑 Видалити", callback_data=f"del_{idx}")]])
-        await message.answer(f"📦 **{p['name']}**\nЦіна: {p['price']} грн", reply_markup=kb, parse_mode="Markdown")
+        await message.answer(f"📦 **{p.get('name', 'Без назви')}**\nЦіна: {p.get('price', 0)} грн", reply_markup=kb, parse_mode="Markdown")
 
 @dp.callback_query(F.data.startswith("del_"))
 async def delete_product(callback: types.CallbackQuery):
@@ -116,7 +140,7 @@ async def delete_product(callback: types.CallbackQuery):
     if 0 <= idx < len(products):
         removed = products.pop(idx)
         save_products(products)
-        await callback.message.edit_text(f"✅ Видалено: {removed['name']}")
+        await callback.message.edit_text(f"✅ Видалено: {removed.get('name')}")
     await callback.answer()
 
 # --- 5. ДОДАВАННЯ ТОВАРУ ---
@@ -124,7 +148,6 @@ async def delete_product(callback: types.CallbackQuery):
 @dp.message(F.text == "📦 Додати товар")
 @dp.message(Command("addtoshop"))
 async def add_to_shop_handler(message: types.Message):
-    if message.from_user.id != ADMIN_ID: return
     product_drafts[message.from_user.id] = {
         "name": "Нова 3D Модель", "desc": "Опис...", "price": "0", "opt": "—", "cat": "Інше",
         "img": "https://placehold.jp/600x400.png"
@@ -184,7 +207,7 @@ async def handle_ping(request):
 async def main():
     app = web.Application()
     app.router.add_get("/", handle_ping)
-    app.router.add_get("/get_products", get_products_api) # Посилання для сайту
+    app.router.add_get("/get_products", get_products_api)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080)))
