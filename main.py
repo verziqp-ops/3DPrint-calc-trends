@@ -19,8 +19,8 @@ import google.generativeai as genai
 logging.basicConfig(level=logging.INFO)
 
 # Отримуємо ключі з оточення Render
-TOKEN = os.getenv("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
-GEMINI_KEY = os.getenv("GEMINI_KEY", "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk")
+TOKEN = os.getenv("BOT_TOKEN")
+GEMINI_KEY = os.getenv("GEMINI_KEY")
 ADMIN_ID = 6259271140 
 
 # Налаштування Gemini через офіційну бібліотеку
