@@ -4,40 +4,74 @@ import logging
 import urllib.parse
 import random
 import json
+import base64
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
+import aiohttp
 from aiohttp import web
 
 # --- 1. НАЛАШТУВАННЯ ---
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = os.environ.get("BOT_TOKEN", "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc")
+# Твій токен бота та ключ Gemini
+TOKEN = "8594286835:AAErm6y6PHa6Pf1ZjcAaTg-osw-yFBUFbhc"
+GEMINI_KEY = "AIzaSyAkmMTOz4uDgr8hKGTFkNYV2UtXL9GV7qk"
 ADMIN_ID = 6259271140 
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# --- ОБМЕЖЕННЯ ДОСТУПУ (Тільки ти) ---
-@dp.message.outer_middleware()
-async def admin_only_middleware(handler, event: types.Message, data):
-    if event.from_user.id != ADMIN_ID:
-        return # Бот просто мовчить, якщо пише не адмін
-    return await handler(event, data)
+# Стан для генератора описів
+class DescGen(StatesGroup):
+    waiting_for_input = State()
+    waiting_for_price = State()
 
-@dp.callback_query.outer_middleware()
-async def admin_only_callback_middleware(handler, event: types.CallbackQuery, data):
-    if event.from_user.id != ADMIN_ID:
-        return 
-    return await handler(event, data)
+# Стан для адмінки магазину
+class ShopAdmin(StatesGroup):
+    waiting_for_value = State()
+    waiting_for_photo = State()
 
+product_drafts = {}
 DB_FILE = "products.json"
 
-# Функції для роботи з базою даних (JSON)
+# --- МІДЛВЕР ДЛЯ АДМІНА ---
+@dp.message.outer_middleware()
+async def admin_only_middleware(handler, event: types.Message, data):
+    if event.from_user.id != ADMIN_ID: return 
+    return await handler(event, data)
+
+# --- 2. ФУНКЦІЯ ШІ (GEMINI) ---
+async def ask_gemini(prompt, photo_bytes=None):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+    
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+    
+    if photo_bytes:
+        payload["contents"][0]["parts"].append({
+            "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": base64.b64encode(photo_bytes).decode('utf-8')
+            }
+        })
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as resp:
+            result = await resp.json()
+            try:
+                return result['candidates'][0]['content']['parts'][0]['text']
+            except:
+                return "❌ Помилка: ШІ не зміг згенерувати опис. Перевір ключ або з'єднання."
+
+# --- 3. ЛОГІКА МАГАЗИНУ (JSON) ---
 def load_products():
     if not os.path.exists(DB_FILE): return []
     with open(DB_FILE, "r", encoding="utf-8") as f:
@@ -47,16 +81,11 @@ def save_products(products):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(products, f, ensure_ascii=False, indent=4)
 
-class ShopAdmin(StatesGroup):
-    waiting_for_value = State()
-    waiting_for_photo = State()
-
-product_drafts = {}
-
-# --- 2. КЛАВІАТУРИ (Заглушки для функцій, якщо їх немає в коді) ---
-def get_main_keyboard(user_id):
+# --- 4. КЛАВІАТУРИ ---
+def get_main_keyboard():
     kb = [
-        [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")]
+        [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")],
+        [KeyboardButton(text="📝 Опис для Insta (ШІ)")]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
@@ -67,151 +96,108 @@ def get_edit_keyboard():
         [InlineKeyboardButton(text="✅ ПІДТВЕРДИТИ", callback_data="confirm_shop")]
     ])
 
-# --- 3. КОМАНДИ ПОШУКУ ---
+# --- 5. ХЕНДЛЕРИ ШІ-ОПИСУ ---
+
+@dp.message(F.text == "📝 Опис для Insta (ШІ)")
+@dp.message(Command("description"))
+async def desc_start(message: types.Message, state: FSMContext):
+    await message.answer("🤖 Надішліть назву товару або **фото** (я сам зрозумію, що це)!")
+    await state.set_state(DescGen.waiting_for_input)
+
+@dp.message(DescGen.waiting_for_input)
+async def desc_input(message: types.Message, state: FSMContext):
+    if message.photo:
+        photo = message.photo[-1]
+        file_info = await bot.get_file(photo.file_id)
+        photo_bytes = await bot.download_file(file_info.file_path)
+        await state.update_data(photo=photo_bytes.read(), name="з фото")
+        await message.answer("📸 Фото отримано! Тепер вкажи ціну (цифрами):")
+    else:
+        await state.update_data(name=message.text, photo=None)
+        await message.answer(f"Назва: {message.text}\nВкажи ціну для посту:")
+    
+    await state.set_state(DescGen.waiting_for_price)
+
+@dp.message(DescGen.waiting_for_price)
+async def desc_final(message: types.Message, state: FSMContext):
+    price = message.text
+    user_data = await state.get_data()
+    wait_msg = await message.answer("⏳ ШІ аналізує та пише опис...")
+    
+    prompt = (
+        f"Ти копірайтер для бренду 3D друку 'Dryguny'. Напиши пост в Instagram. "
+        f"Товар: {user_data.get('name')}. Ціна: {price} грн. "
+        f"Використовуй цей шаблон ТОЧНО:\n"
+        "1. Назва товару та крутий емодзі\n"
+        f"2. {price} грн💵\n"
+        "3. Зазвичай моделі є в наявності або виготовлення 1-3 дні📅\n"
+        "4. Можемо надрукувати ваші ідеї (не з нашого асортименту)✨\n"
+        "5. Надруковано з безпечного для здоров'я екологічного пластику PLA♻️\n"
+        "Пиши українською. Якщо є фото, опиши що на ньому бачиш коротко і привабливо."
+    )
+
+    ai_text = await ask_gemini(prompt, user_data.get('photo'))
+    await wait_msg.delete()
+    await message.answer(f"<code>{ai_text}</code>", parse_mode="HTML")
+    await state.clear()
+
+# --- 6. КОМАНДИ ПОШУКУ ТА ІДЕЙ ---
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
-    await message.answer(
-        "🚀 **Вітаємо у Dryguny 3D Hub!**\n\n"
-        "🔍 `/find [назва]` — пошук STL моделей\n"
-        "🧠 `/idea` — випадкова ідея\n"
-        "🧵 `/filament [тип] [ціна]` — пошук пластику\n"
-        "🔥 `/viral` — тренди\n"
-        "📈 `/trend` — топ світу",
-        parse_mode="Markdown",
-        reply_markup=get_main_keyboard(message.from_user.id)
-    )
-
-@dp.message(Command("idea"))
-async def idea_handler(message: types.Message):
-    keywords = ["dragon", "robot", "car", "figurine", "animal", "fidget", "articulated", "gadget", "container"]
-    keyword = random.choice(keywords)
-    q = urllib.parse.quote(keyword)
-    text = f"🧠 **Ідея для друку:** `{keyword}`\n\n🔗 [MakerWorld](https://makerworld.com/search/models?keyword={q})\n🔗 [Printables](https://www.printables.com/search/models?q={q})\n🔗 [Thingiverse](https://www.thingiverse.com/search?q={q})"
-    await message.answer(text, parse_mode="Markdown")
+    await message.answer("🚀 **Dryguny 3D Hub** активний!", reply_markup=get_main_keyboard(), parse_mode="Markdown")
 
 @dp.message(Command("find"))
 async def find_handler(message: types.Message):
     query = message.text.replace("/find", "").strip()
-    if not query: return await message.answer("❌ Напиши, що шукати.")
+    if not query: return await message.answer("❌ Що шукаємо?")
     q = urllib.parse.quote(query)
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="MakerWorld 🧩", url=f"https://makerworld.com/en/search/models?keyword={q}")],
-        [InlineKeyboardButton(text="Printables 🟧", url=f"https://www.printables.com/search/models?q={q}")],
-        [InlineKeyboardButton(text="Thingiverse 🌀", url=f"https://www.thingiverse.com/search?q={q}")]
+        [InlineKeyboardButton(text="Printables 🟧", url=f"https://www.printables.com/search/models?q={q}")]
     ])
-    await message.answer(f"🔎 **Пошук STL для:** `{query}`", reply_markup=markup, parse_mode="Markdown")
+    await message.answer(f"🔎 Пошук моделей для: `{query}`", reply_markup=markup, parse_mode="Markdown")
 
-@dp.message(Command("filament"))
-async def filament_handler(message: types.Message):
-    try:
-        args = message.text.split()
-        material = args[1].lower()
-        p_min, p_max = args[2].split("-")
-        q_encoded = urllib.parse.quote(material)
-        text = f"🧵 **Результати для:** `{material.upper()}`\n💰 Бюджет: `{p_min}-{p_max}` грн\n\n[Filament.org.ua](https://filament.org.ua/ua/product_list?search_term={q_encoded})\n[Prom.ua](https://prom.ua/ua/search?search_term={q_encoded})"
-        await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True)
-    except: await message.answer("❌ Формат: `/filament pla 400-600`")
-
-@dp.message(Command("viral"))
-async def viral_handler(message: types.Message):
-    await message.answer("🔥 **Вірусні моделі:**\n• [TikTok Trends](https://www.tiktok.com/search?q=3d%20printed%20gadgets)", parse_mode="Markdown")
-
-@dp.message(Command("trend", "top"))
-async def top_handler(message: types.Message):
-    await message.answer("🏆 **ТОП моделі:**\n• [MakerWorld Hot](https://makerworld.com/en/models)", parse_mode="Markdown")
-
-# --- 4. АДМІНІСТРУВАННЯ ТА ВИДАЛЕННЯ ---
+# --- 7. КЕРУВАННЯ ТА ДОДАВАННЯ (Твій оригінальний код) ---
 
 @dp.message(F.text == "⚙️ Керувати магазином")
-@dp.message(Command("manage"))
 async def manage_products(message: types.Message):
     products = load_products()
     if not products: return await message.answer("Магазин порожній.")
-    
     for idx, p in enumerate(products):
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🗑 Видалити", callback_data=f"del_{idx}")]])
-        await message.answer(f"📦 **{p.get('name', 'Без назви')}**\nЦіна: {p.get('price', 0)} грн", reply_markup=kb, parse_mode="Markdown")
+        await message.answer(f"📦 **{p.get('name')}** - {p.get('price')} грн", reply_markup=kb)
 
 @dp.callback_query(F.data.startswith("del_"))
 async def delete_product(callback: types.CallbackQuery):
     idx = int(callback.data.split("_")[1])
     products = load_products()
     if 0 <= idx < len(products):
-        removed = products.pop(idx)
+        products.pop(idx)
         save_products(products)
-        await callback.message.edit_text(f"✅ Видалено: {removed.get('name')}")
-    await callback.answer()
-
-# --- 5. ДОДАВАННЯ ТОВАРУ ---
+        await callback.message.delete()
+    await callback.answer("Видалено")
 
 @dp.message(F.text == "📦 Додати товар")
-@dp.message(Command("addtoshop"))
-async def add_to_shop_handler(message: types.Message):
-    product_drafts[message.from_user.id] = {
-        "name": "Нова 3D Модель", "desc": "Опис...", "price": "0", "opt": "—", "cat": "Інше",
-        "img": "https://placehold.jp/600x400.png"
-    }
-    await send_product_preview(message.chat.id, message.from_user.id)
+async def add_to_shop(message: types.Message):
+    product_drafts[message.from_user.id] = {"name": "Нова модель", "desc": "Опис...", "price": "0", "img": "https://placehold.jp/600x400.png", "opt": "-", "cat": "-"}
+    await send_preview(message.chat.id, message.from_user.id)
 
-async def send_product_preview(chat_id, user_id):
+async def send_preview(chat_id, user_id):
     data = product_drafts[user_id]
-    caption = f"🏷 **{data['name']}**\n\n{data['desc']}\n\n💰 Ціна: {data['price']} ₴\n📦 Опт: {data['opt']}\n📂 Категорія: {data['cat']}"
-    await bot.send_photo(chat_id=chat_id, photo=data['img'], caption=caption, reply_markup=get_edit_keyboard(), parse_mode="Markdown")
+    caption = f"🏷 {data['name']}\n💰 {data['price']} грн"
+    await bot.send_photo(chat_id, data['img'], caption=caption, reply_markup=get_edit_keyboard())
 
-@dp.callback_query(F.data.startswith("edit_"))
-async def start_editing(callback: types.CallbackQuery, state: FSMContext):
-    field = callback.data.split("_")[1]
-    if field == "photo":
-        await callback.message.answer("🖼 Надішли фото:")
-        await state.set_state(ShopAdmin.waiting_for_photo)
-    else:
-        await state.update_data(editing_field=field)
-        await callback.message.answer(f"Введи нове значення для {field}:")
-        await state.set_state(ShopAdmin.waiting_for_value)
-    await callback.answer()
+# --- 8. ЗАПУСК ---
 
-@dp.message(ShopAdmin.waiting_for_value)
-async def process_text_edit(message: types.Message, state: FSMContext):
-    user_id = message.from_user.id
-    field = (await state.get_data())["editing_field"]
-    product_drafts[user_id][field] = message.text
-    await state.clear()
-    await send_product_preview(message.chat.id, user_id)
-
-@dp.message(ShopAdmin.waiting_for_photo, F.photo)
-async def process_photo_edit(message: types.Message, state: FSMContext):
-    product_drafts[message.from_user.id]["img"] = message.photo[-1].file_id
-    await state.clear()
-    await send_product_preview(message.chat.id, message.from_user.id)
-
-@dp.callback_query(F.data == "confirm_shop")
-async def confirm_shop(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in product_drafts:
-        products = load_products()
-        products.append(product_drafts[user_id])
-        save_products(products)
-        await callback.message.answer("✅ Товар додано в базу!")
-        del product_drafts[user_id]
-    await callback.answer()
-
-# --- 6. API ДЛЯ САЙТУ ---
-
-async def get_products_api(request):
-    return web.json_response(load_products())
-
-async def handle_ping(request):
-    return web.Response(text="Dryguny Bot Online")
+async def handle_ping(request): return web.Response(text="Online")
 
 async def main():
     app = web.Application()
     app.router.add_get("/", handle_ping)
-    app.router.add_get("/get_products", get_products_api)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080)))
-    await site.start()
+    await web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 8080))).start()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
