@@ -42,12 +42,11 @@ product_drafts = {}
 
 # --- 2. КЛАВІАТУРИ ---
 
-def get_main_keyboard(user_id):
-    web_app_url = "https://dryguny.com.ua" 
-    buttons = [[KeyboardButton(text="🛍 ВІДКРИТИ МАГАЗИН", web_app=WebAppInfo(url=web_app_url))]]
+d#ef get_main_keyboard(user_id):   web_app_url = "https://dryguny.com.ua" 
+   # buttons = [[KeyboardButton(text="🛍 ВІДКРИТИ МАГАЗИН", web_app=WebAppInfo(url=web_app_url))]]
     
-    if user_id == ADMIN_ID:
-        buttons.append([KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")])
+  #  if user_id == ADMIN_ID:
+       # buttons.append([KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")])
         
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
