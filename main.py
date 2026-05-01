@@ -42,9 +42,12 @@ async def admin_only_middleware(handler, event: types.Message, data):
     if event.from_user.id != ADMIN_ID: return 
     return await handler(event, data)
 
-# --- 2. ФУНКЦІЯ ШІ (ВИПРАВЛЕНА) ---
+# --- 2. ФУНКЦІЯ ШІ (ВИПРАВЛЕНА URL ТА СТРУКТУРА) ---
 async def ask_gemini(prompt, photo_bytes=None):
+    # Оновлений URL для Gemini 1.5 Flash
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+    
+    headers = {'Content-Type': 'application/json'}
     
     parts = [{"text": prompt}]
     if photo_bytes:
@@ -55,18 +58,38 @@ async def ask_gemini(prompt, photo_bytes=None):
             }
         })
 
-    payload = {"contents": [{"parts": parts}]}
+    payload = {
+        "contents": [{
+            "parts": parts
+        }]
+    }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload) as resp:
-            if resp.status != 200:
-                return f"❌ Помилка сервера ШІ: {resp.status}"
-            result = await resp.json()
-            try:
-                # Чітке витягування тексту
-                return result['candidates'][0]['content']['parts'][0]['text']
-            except (KeyError, IndexError):
-                return "❌ Помилка структури відповіді ШІ. Спробуй ще раз."
+        try:
+            async with session.post(url, json=payload, headers=headers) as resp:
+                if resp.status != 200:
+                    error_text = await resp.text()
+                    logging.error(f"Gemini Error: {resp.status} - {error_text}")
+                    return f"❌ Помилка сервера ШІ: {resp.status}. Перевірте налаштування в Google AI Studio."
+                
+                result = await resp.json()
+                # Перевірка наявності відповіді в структурі JSON
+                if 'candidates' in result and result['candidates']:
+                    return result['candidates'][0]['content']['parts'][0]['text']
+                else:
+                    return "❌ ШІ повернув порожню відповідь. Спробуйте інше фото або назву."
+        except Exception as e:
+            logging.error(f"Network error: {e}")
+            return "❌ Помилка мережі при зверненні до ШІ."
+
+# --- ОНОВЛЕНА КЛАВІАТУРА (ЩОБ ВСЕ БУЛО ВИДНО) ---
+def get_main_keyboard():
+    kb = [
+        [KeyboardButton(text="📦 Додати товар"), KeyboardButton(text="⚙️ Керувати магазином")],
+        [KeyboardButton(text="📝 Опис для Insta (ШІ)")],
+        [KeyboardButton(text="💡 Ідея для друку"), KeyboardButton(text="🔍 Пошук STL")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
 # --- 3. ЛОГІКА МАГАЗИНУ ---
 def load_products():
